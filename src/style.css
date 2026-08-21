@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+/* Define custom theme variables for your Global Funds brand */
+@theme {
+  --color-brand-dark: #0B0F19;
+  --color-brand-card: #111827;
+  --color-emerald-500: #10B981;
+  --color-emerald-400: #34D399;
+}
