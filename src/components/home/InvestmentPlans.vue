@@ -12,67 +12,94 @@ const marketWidgetContainer = ref<HTMLElement | null>(null)
 
 const plans = [
   {
-    name: 'Beginner Plan',
+    name: 'Starting Plan',
     icon: 'lucide:leaf',
-    min: '$65',
-    max: '$6,500',
-    profit: '10%',
-    duration: '24 hours',
-    isLimited: false
-  },
-  {
-    name: 'Growth Plan',
-    icon: 'lucide:line-chart',
-    min: '$1,200',
-    max: '$15,000',
+    min: '$80',
+    max: '$4,000',
     profit: '15%',
-    duration: '2 days',
+    duration: '24 hours',
+    ref: '10%',
     isLimited: false
   },
   {
-    name: 'Premium Plan',
-    icon: 'lucide:rocket',
-    min: '$2,500',
-    max: '$30,000',
-    profit: '35%',
-    duration: '3 days',
-    isLimited: false
-  },
-  {
-    name: 'Elite Plan',
-    icon: 'lucide:crown',
-    min: '$4,000',
-    max: '$45,000',
-    profit: '50%',
-    duration: '4 days',
-    isLimited: false
-  },
-  {
-    name: 'Christmas Bonus Plan',
-    icon: 'lucide:gift',
-    min: '$1,500',
-    max: '$5,000',
+    name: 'Emy Plan',
+    icon: 'lucide:trending-up',
+    min: '$550',
+    max: '$9,990',
     profit: '20%',
-    duration: '24 hours',
-    isLimited: true
+    duration: '36 hours',
+    ref: '10%',
+    isLimited: false
   },
   {
-    name: 'Christmas Bonus Plan 2',
-    icon: 'lucide:snowflake',
-    min: '$2,300',
-    max: '$15,000',
+    name: 'Bonus Plan',
+    icon: 'lucide:gift',
+    min: '$1,200',
+    max: '$7,000',
+    profit: '45%',
+    duration: '40 hours',
+    ref: '10%',
+    isLimited: false
+  },
+  {
+    name: 'Superlative Plan',
+    icon: 'lucide:award',
+    min: '$1,500',
+    max: '$9,500',
+    profit: '25%',
+    duration: '36 hours',
+    ref: '10%',
+    isLimited: false
+  },
+  {
+    name: 'Loan Plan',
+    icon: 'lucide:landmark',
+    min: '$2,200',
+    max: 'Unlimited',
     profit: '40%',
-    duration: '18 hours',
+    duration: '20 hours',
+    ref: '10%',
+    isLimited: false
+  },
+  {
+    name: 'Weekend Plan',
+    icon: 'lucide:calendar',
+    min: '$1,000',
+    max: '$30,000',
+    profit: '50%',
+    duration: '9 hours',
+    ref: '10%',
     isLimited: true
   },
   {
-    name: 'Christmas Bonus Plan 3',
+    name: 'Gold Plan',
+    icon: 'lucide:coins',
+    min: '$4,500',
+    max: 'Unlimited',
+    profit: '55%',
+    duration: '2 days',
+    ref: '10%',
+    isLimited: false
+  },
+  {
+    name: 'Xmas Bonus',
     icon: 'lucide:snowflake',
-    min: '$800',
-    max: '$10,000',
-    profit: '15%',
-    duration: '10 hours',
+    min: '$750',
+    max: '$15,000',
+    profit: '45%',
+    duration: '1 day',
+    ref: '10%',
     isLimited: true
+  },
+  {
+    name: 'Upgrade Plan',
+    icon: 'lucide:arrow-up-circle',
+    min: '$950',
+    max: 'Unlimited',
+    profit: '25%',
+    duration: 'Custom',
+    ref: '10%',
+    isLimited: false
   }
 ]
 
@@ -99,7 +126,7 @@ onMounted(() => {
       opacity: 1,
       y: 0,
       duration: 0.8,
-      stagger: 0.15,
+      stagger: 0.1,
       ease: 'power3.out',
       scrollTrigger: {
         trigger: plansGrid.value,
@@ -187,6 +214,12 @@ onMounted(() => {
             <div class="flex justify-between items-center text-sm">
               <span class="text-gray-400">Duration:</span>
               <span class="font-bold text-white">{{ plan.duration }}</span>
+            </div>
+
+            <!-- New Referral Row -->
+            <div class="flex justify-between items-center text-sm">
+              <span class="text-gray-400">Referral:</span>
+              <span class="font-bold text-emerald-400">{{ plan.ref }}</span>
             </div>
           </div>
 
