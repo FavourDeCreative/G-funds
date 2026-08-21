@@ -3,7 +3,6 @@ import { onMounted, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import gsap from 'gsap'
 
-const container = ref<HTMLElement | null>(null)
 const headline = ref<HTMLElement | null>(null)
 const subheadline = ref<HTMLElement | null>(null)
 const ctas = ref<HTMLElement | null>(null)
