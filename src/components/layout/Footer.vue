@@ -8,9 +8,9 @@ import { Icon } from '@iconify/vue'
       
       <!-- About Section -->
       <div>
-        <h3 class="text-sm font-bold tracking-wider uppercase mb-6">About EversteadInvest</h3>
+        <h3 class="text-sm font-bold tracking-wider uppercase mb-6">Global Funds </h3>
         <p class="text-gray-400 text-sm leading-relaxed mb-6">
-          EversteadInvest empowers individuals and businesses to achieve financial growth through secure, transparent, and innovative investment opportunities. Our mission is to simplify wealth creation with trust, technology, and expertise.
+          Global Funds empowers individuals and businesses to achieve financial growth through secure, transparent, and innovative investment opportunities. Our mission is to simplify wealth creation with trust, technology, and expertise.
         </p>
         <div class="flex items-center gap-4">
           <a href="#" class="text-gray-400 hover:text-white transition-colors">
@@ -49,7 +49,7 @@ import { Icon } from '@iconify/vue'
           <li class="flex items-start gap-3">
             <Icon icon="lucide:mail" class="w-5 h-5 text-gray-300 shrink-0" />
             <a href="mailto:support@eversteadinvest.com" class="hover:text-white transition-colors">
-              support@eversteadinvest.com
+              support@globalfunds.com
             </a>
           </li>
           <li class="flex items-start gap-3">
