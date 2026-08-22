@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { computed } from 'vue'
+
+const currentYear = computed(() => new Date().getFullYear())
 </script>
 
 <template>
@@ -72,16 +75,10 @@ import { Icon } from '@iconify/vue'
     </div>
 
     <!-- Copyright Bar -->
-   <div className="max-w-7xl mx-auto px-6 text-center border-t border-gray-900 pt-8">
-  <p className="text-xs text-gray-500">
-    © {new Date().getFullYear()} Global Funds. All rights reserved. | Crafted with <span className="text-red-500">❤️</span> for your financial future.
-  </p>
-</div>
-
-    <!-- Floating Chat Widget Mockup -->
-    <button class="fixed bottom-6 right-6 bg-red-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:bg-red-500 transition-colors z-50">
-      <Icon icon="lucide:message-circle" class="w-6 h-6" />
-      <span class="absolute top-0 right-0 w-4 h-4 bg-red-500 border-2 border-[#050505] rounded-full text-[8px] flex items-center justify-center font-bold">1</span>
-    </button>
+    <div class="max-w-7xl mx-auto px-6 text-center border-t border-gray-900 pt-8">
+      <p class="text-xs text-gray-500">
+        © {{ currentYear }} Global Funds. All rights reserved. | Crafted with <span class="text-red-500">❤️</span> for your financial future.
+      </p>
+    </div>
   </footer>
 </template>
