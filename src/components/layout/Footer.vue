@@ -72,11 +72,11 @@ import { Icon } from '@iconify/vue'
     </div>
 
     <!-- Copyright Bar -->
-    <div class="max-w-7xl mx-auto px-6 text-center border-t border-gray-900 pt-8">
-      <p class="text-xs text-gray-500">
-        © 2026 EversteadInvest. All rights reserved. | Crafted with <span class="text-red-500">❤️</span> for your financial future.
-      </p>
-    </div>
+   <div className="max-w-7xl mx-auto px-6 text-center border-t border-gray-900 pt-8">
+  <p className="text-xs text-gray-500">
+    © {new Date().getFullYear()} Global Funds. All rights reserved. | Crafted with <span className="text-red-500">❤️</span> for your financial future.
+  </p>
+</div>
 
     <!-- Floating Chat Widget Mockup -->
     <button class="fixed bottom-6 right-6 bg-red-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:bg-red-500 transition-colors z-50">
