@@ -72,7 +72,7 @@ onMounted(() => {
         <router-link to="/register" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-[#0B0F19] px-8 py-4 rounded-full font-bold transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)]">
           Start Trading Now
         </router-link>
-        <router-link to="/markets" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#1A1D24] hover:bg-[#222630] text-white border border-gray-700/50 px-8 py-4 rounded-full font-medium transition-all">
+        <router-link to="/market" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#1A1D24] hover:bg-[#222630] text-white border border-gray-700/50 px-8 py-4 rounded-full font-medium transition-all">
           <Icon icon="lucide:line-chart" class="w-5 h-5" />
           View Live Markets
         </router-link>
