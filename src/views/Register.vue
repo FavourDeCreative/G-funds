@@ -2,8 +2,6 @@
 import { onMounted, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import gsap from 'gsap'
-
-const formContainer = ref<HTMLElement | null>(null)
 const imageContainer = ref<HTMLElement | null>(null)
 
 const fullName = ref('')
