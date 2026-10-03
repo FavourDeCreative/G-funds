@@ -3,7 +3,6 @@ import { onMounted, ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import gsap from 'gsap'
 import { useRouter } from 'vue-router'
-import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
 const router = useRouter()

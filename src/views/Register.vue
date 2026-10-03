@@ -1,11 +1,13 @@
+
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import gsap from 'gsap'
 import { useRouter } from 'vue-router'
-import { supabase } from '../lib/supabase.ts'
+import { useAuth } from '../stores/auth'
 
 const router = useRouter()
+const auth = useAuth()
 
 const imageContainer = ref<HTMLElement | null>(null)
 
@@ -23,32 +25,26 @@ const successMessage = ref('')
 onMounted(() => {
   gsap.fromTo(
     imageContainer.value,
-    {
-      opacity: 0,
-      x: 50
-    },
+    { opacity: 0, x: 50 },
     {
       opacity: 1,
       x: 0,
       duration: 1,
-      ease: 'power3.out'
-    }
+      ease: 'power3.out',
+    },
   )
 
   gsap.fromTo(
     '.gsap-item',
-    {
-      opacity: 0,
-      y: 20
-    },
+    { opacity: 0, y: 20 },
     {
       opacity: 1,
       y: 0,
       duration: 0.8,
       stagger: 0.08,
       ease: 'power3.out',
-      delay: 0.2
-    }
+      delay: 0.2,
+    },
   )
 })
 
@@ -58,100 +54,88 @@ const registerUser = async () => {
 
   const cleanName = fullName.value.trim()
   const cleanEmail = email.value.trim().toLowerCase()
-  const cleanReferralCode = referralCode.value.trim()
 
-  // Validate full name
   if (!cleanName) {
     errorMessage.value = 'Please enter your full name.'
     return
   }
 
-  // Validate email
   if (!cleanEmail) {
     errorMessage.value = 'Please enter your email address.'
     return
   }
 
-  // Validate password
-  if (password.value.length < 6) {
-    errorMessage.value = 'Password must be at least 6 characters.'
+  if (password.value.length < 8) {
+    errorMessage.value = 'Password must be at least 8 characters.'
     return
   }
 
-  // Confirm password
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Passwords do not match.'
     return
   }
 
-  // Terms
   if (!acceptTerms.value) {
     errorMessage.value =
       'You must accept the Terms of Service and Privacy Policy.'
     return
   }
 
+  /*
+   * Split the full name into the fields
+   * expected by the backend.
+   *
+   * Example:
+   * "John Doe"
+   * → firstName: "John"
+   * → lastName: "Doe"
+   */
+  const nameParts = cleanName.split(/\s+/)
+
+  const firstName = nameParts[0]
+  const lastName =
+    nameParts.slice(1).join(' ') || firstName
+
   loading.value = true
 
   try {
-    const { data, error } = await supabase.auth.signUp({
-      email: cleanEmail,
-      password: password.value,
-
-      options: {
-        data: {
-          full_name: cleanName,
-          referral_code: cleanReferralCode || null
-        },
-
-        emailRedirectTo: `${window.location.origin}/verify-email`
-      }
-    })
-
-    if (error) {
-      console.error('Supabase registration error:', error)
-
-      errorMessage.value = error.message
-      return
-    }
-
-    if (!data.user) {
-      errorMessage.value =
-        'Unable to create your account. Please try again.'
-      return
-    }
-
     /*
-     * The Supabase database trigger automatically creates:
+     * Registration is now handled by useAuth().
      *
-     * profiles
-     * wallets
-     *
-     * for the newly registered user.
-     *
-     * We therefore do NOT manually insert either record here.
+     * useAuth() → api/client.ts
+     *          → POST /auth/register
+     *          → Express backend
      */
-
-    successMessage.value =
-      'Account created successfully. Check your email for your verification code.'
-
-    // Store email temporarily for VerifyEmail.vue
-    sessionStorage.setItem(
-      'verification_email',
-      cleanEmail
+    await auth.register(
+      cleanEmail,
+      password.value,
+      firstName,
+      lastName,
     )
 
-    // Small delay so the success message can be displayed
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    /*
+     * Referral code is intentionally not sent yet.
+     *
+     * The current backend User model does not have
+     * a referralCode field.
+     */
+    void referralCode.value
 
-    await router.push('/verify-email')
+    successMessage.value =
+      'Account created successfully. Redirecting...'
 
-  } catch (error) {
-    console.error('Registration error:', error)
+    /*
+     * Small delay so the user can see the success message.
+     */
+    await new Promise((resolve) =>
+      setTimeout(resolve, 800),
+    )
 
+    await router.push('/dashboard')
+  } catch (err: any) {
     errorMessage.value =
+      err.response?.data?.message ||
       'Something went wrong. Please check your internet connection and try again.'
-
   } finally {
     loading.value = false
   }
@@ -166,7 +150,6 @@ const registerUser = async () => {
       ref="imageContainer"
       class="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden"
     >
-
       <div
         class="absolute inset-0 bg-emerald-500/10 z-10"
       ></div>
@@ -181,107 +164,73 @@ const registerUser = async () => {
         class="absolute inset-0 w-full h-full object-cover opacity-40"
       />
 
-      <div
-        class="relative z-20 text-center max-w-lg px-8"
-      >
-
-        <h2
-          class="text-4xl font-bold text-white mb-6"
-        >
+      <div class="relative z-20 text-center max-w-lg px-8">
+        <h2 class="text-4xl font-bold text-white mb-6">
           Start Your Financial Journey
         </h2>
 
-        <p
-          class="text-gray-400 text-lg leading-relaxed"
-        >
+        <p class="text-gray-400 text-lg leading-relaxed">
           Join Global Funds and take control of your
           investment journey with powerful tools,
           strategic investment plans, and portfolio
           analytics.
         </p>
-
       </div>
     </div>
-
 
     <!-- Left Side -->
     <div
       class="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative z-20 overflow-y-auto"
     >
-
       <div
         class="w-full max-w-md bg-[#12151C] border border-gray-800 rounded-2xl p-8 shadow-2xl my-12 lg:my-0"
       >
 
         <!-- Logo -->
-        <div
-          class="gsap-item flex justify-center mb-6"
-        >
-
+        <div class="gsap-item flex justify-center mb-6">
           <img
             src="/img/logo.png"
             alt="Global Funds"
             class="h-10 w-auto"
           />
-
         </div>
 
-
         <!-- Heading -->
-        <div
-          class="gsap-item text-center mb-8"
-        >
-
-          <h3
-            class="text-2xl font-bold text-white mb-2"
-          >
+        <div class="gsap-item text-center mb-8">
+          <h3 class="text-2xl font-bold text-white mb-2">
             Create an Account
           </h3>
 
-          <p
-            class="text-gray-400 text-sm"
-          >
+          <p class="text-gray-400 text-sm">
             Fill in the details below to get started
           </p>
-
         </div>
-
 
         <!-- Error -->
         <div
           v-if="errorMessage"
           class="gsap-item mb-5 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-sm flex items-start gap-2"
         >
-
           <Icon
             icon="lucide:circle-alert"
             class="w-5 h-5 shrink-0 mt-0.5"
           />
 
-          <span>
-            {{ errorMessage }}
-          </span>
-
+          <span>{{ errorMessage }}</span>
         </div>
-
 
         <!-- Success -->
         <div
           v-if="successMessage"
           class="gsap-item mb-5 p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-sm flex items-start gap-2"
         >
-
           <Icon
             icon="lucide:circle-check"
             class="w-5 h-5 shrink-0 mt-0.5"
           />
 
-          <span>
-            {{ successMessage }}
-          </span>
-
+          <span>{{ successMessage }}</span>
         </div>
-
 
         <!-- Form -->
         <form
@@ -291,7 +240,6 @@ const registerUser = async () => {
 
           <!-- Full Name -->
           <div class="gsap-item">
-
             <label
               class="block text-sm font-medium text-gray-300 mb-1"
             >
@@ -299,16 +247,13 @@ const registerUser = async () => {
             </label>
 
             <div class="relative">
-
               <span
                 class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
               >
-
                 <Icon
                   icon="lucide:user"
                   class="w-5 h-5"
                 />
-
               </span>
 
               <input
@@ -319,15 +264,11 @@ const registerUser = async () => {
                 class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-gray-600"
                 placeholder="John Doe"
               />
-
             </div>
-
           </div>
-
 
           <!-- Email -->
           <div class="gsap-item">
-
             <label
               class="block text-sm font-medium text-gray-300 mb-1"
             >
@@ -335,16 +276,13 @@ const registerUser = async () => {
             </label>
 
             <div class="relative">
-
               <span
                 class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
               >
-
                 <Icon
                   icon="lucide:mail"
                   class="w-5 h-5"
                 />
-
               </span>
 
               <input
@@ -355,11 +293,8 @@ const registerUser = async () => {
                 class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-gray-600"
                 placeholder="john.doe@example.com"
               />
-
             </div>
-
           </div>
-
 
           <!-- Password / Confirm -->
           <div
@@ -368,7 +303,6 @@ const registerUser = async () => {
 
             <!-- Password -->
             <div>
-
               <label
                 class="block text-sm font-medium text-gray-300 mb-1"
               >
@@ -376,36 +310,29 @@ const registerUser = async () => {
               </label>
 
               <div class="relative">
-
                 <span
                   class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
                 >
-
                   <Icon
                     icon="lucide:lock"
                     class="w-4 h-4"
                   />
-
                 </span>
 
                 <input
                   v-model="password"
                   type="password"
                   required
-                  minlength="6"
+                  minlength="8"
                   autocomplete="new-password"
                   class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-gray-600"
                   placeholder="••••••••"
                 />
-
               </div>
-
             </div>
-
 
             <!-- Confirm -->
             <div>
-
               <label
                 class="block text-sm font-medium text-gray-300 mb-1"
               >
@@ -413,58 +340,45 @@ const registerUser = async () => {
               </label>
 
               <div class="relative">
-
                 <span
                   class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
                 >
-
                   <Icon
                     icon="lucide:check-circle"
                     class="w-4 h-4"
                   />
-
                 </span>
 
                 <input
                   v-model="confirmPassword"
                   type="password"
                   required
-                  minlength="6"
+                  minlength="8"
                   autocomplete="new-password"
                   class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-gray-600"
                   placeholder="••••••••"
                 />
-
               </div>
-
             </div>
-
           </div>
-
 
           <!-- Referral -->
           <div class="gsap-item">
-
             <label
               class="block text-sm font-medium text-gray-300 mb-1"
             >
               Referral Code
-              <span class="text-gray-500">
-                (Optional)
-              </span>
+              <span class="text-gray-500">(Optional)</span>
             </label>
 
             <div class="relative">
-
               <span
                 class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
               >
-
                 <Icon
                   icon="lucide:users"
                   class="w-5 h-5"
                 />
-
               </span>
 
               <input
@@ -474,22 +388,16 @@ const registerUser = async () => {
                 class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-gray-600"
                 placeholder="REF-12345"
               />
-
             </div>
-
           </div>
 
-
           <!-- Terms -->
-          <div
-            class="gsap-item flex items-start mt-2"
-          >
-
+          <div class="gsap-item flex items-start mt-2">
             <input
+              id="terms"
               v-model="acceptTerms"
               type="checkbox"
               required
-              id="terms"
               class="w-4 h-4 mt-0.5 rounded border-gray-700 text-emerald-500 bg-[#0B0F19] focus:ring-emerald-500 focus:ring-offset-[#12151C]"
             />
 
@@ -497,7 +405,6 @@ const registerUser = async () => {
               for="terms"
               class="ml-2 text-sm text-gray-400 cursor-pointer"
             >
-
               I agree to the
 
               <router-link
@@ -515,11 +422,8 @@ const registerUser = async () => {
               >
                 Privacy Policy
               </router-link>
-
             </label>
-
           </div>
-
 
           <!-- Submit -->
           <button
@@ -527,46 +431,36 @@ const registerUser = async () => {
             :disabled="loading"
             class="gsap-item w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-[#0B0F19] font-bold py-3.5 rounded-lg transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_25px_rgba(16,185,129,0.4)] mt-6"
           >
-
             <span
               v-if="!loading"
               class="flex items-center justify-center gap-2"
             >
-
               <Icon
                 icon="lucide:user-plus"
                 class="w-5 h-5"
               />
 
               Create Account
-
             </span>
-
 
             <span
               v-else
               class="flex items-center justify-center gap-2"
             >
-
               <Icon
                 icon="lucide:loader-2"
                 class="w-5 h-5 animate-spin"
               />
 
               Creating Account...
-
             </span>
-
           </button>
-
         </form>
-
 
         <!-- Login -->
         <p
           class="gsap-item text-center text-sm text-gray-400 mt-6"
         >
-
           Already have an account?
 
           <router-link
@@ -575,12 +469,8 @@ const registerUser = async () => {
           >
             Sign in
           </router-link>
-
         </p>
-
       </div>
-
     </div>
-
   </div>
 </template>

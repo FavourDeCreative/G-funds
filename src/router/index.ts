@@ -1,105 +1,96 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import { supabase } from '../lib/supabase'
+import { createRouter, createWebHistory } from "vue-router";
+import HomeView from "../views/HomeView.vue";
 
 const routes = [
   {
-    path: '/',
-    name: 'home',
+    path: "/",
+    name: "home",
     component: HomeView,
   },
 
   {
-    path: '/login',
-    name: 'login',
-    component: () => import('../views/Login.vue'),
+    path: "/login",
+    name: "login",
+    component: () => import("../views/Login.vue"),
     meta: {
       guestOnly: true,
     },
   },
 
   {
-    path: '/register',
-    name: 'register',
-    component: () => import('../views/Register.vue'),
+    path: "/register",
+    name: "register",
+    component: () => import("../views/Register.vue"),
     meta: {
       guestOnly: true,
     },
   },
 
   {
-    path: '/market',
-    name: 'market',
-    component: () => import('../views/Market.vue'),
+    path: "/market",
+    name: "market",
+    component: () => import("../views/Market.vue"),
   },
 
   {
-    path: '/dashboard',
-    name: 'dashboard',
-    component: () => import('../views/Dashboard.vue'),
+    path: "/dashboard",
+    name: "dashboard",
+    component: () => import("../views/Dashboard.vue"),
     meta: {
       requiresAuth: true,
     },
   },
 
   {
-    path: '/forgot-password',
-    name: 'forgot-password',
-    component: () => import('../views/ForgotPassword.vue'),
+    path: "/forgot-password",
+    name: "forgot-password",
+    component: () => import("../views/ForgotPassword.vue"),
     meta: {
       guestOnly: true,
     },
   },
 
   {
-    path: '/reset-password',
-    name: 'reset-password',
-    component: () => import('../views/ResetPassword.vue'),
+    path: "/reset-password",
+    name: "reset-password",
+    component: () => import("../views/ResetPassword.vue"),
   },
-]
+
+  // 404
+  {
+    path: "/:pathMatch(.*)*",
+    name: "not-found",
+    component: () => import("../views/NotFound.vue"),
+  },
+];
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
-})
+});
 
-/*
- * Authentication Guard
- *
- * Runs before every route change.
- */
-router.beforeEach(async (to) => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+router.beforeEach((to) => {
+  const token = localStorage.getItem("token");
+  const isAuthenticated = Boolean(token);
 
-  /*
-   * Protected page
-   *
-   * User must be logged in.
-   */
-  if (to.meta.requiresAuth && !session) {
+  // Protected routes
+  if (to.meta.requiresAuth && !isAuthenticated) {
     return {
-      name: 'login',
-    }
+      name: "login",
+      query: {
+        redirect: to.fullPath,
+      },
+    };
   }
 
-  /*
-   * Guest-only pages
-   *
-   * Logged-in users don't need to access
-   * login/register/forgot-password.
-   */
-  if (to.meta.guestOnly && session) {
+  // Guest-only routes
+  if (to.meta.guestOnly && isAuthenticated) {
     return {
-      name: 'dashboard',
-    }
+      name: "dashboard",
+    };
   }
 
-  /*
-   * Everything is okay.
-   */
-  return true
-})
+  return true;
+});
 
-export default router
+export default router;

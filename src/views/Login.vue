@@ -1,11 +1,13 @@
+```vue
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import gsap from 'gsap'
 import { useRouter } from 'vue-router'
-import { supabase } from '../lib/supabase'
+import { useAuth } from '../stores/auth'
 
 const router = useRouter()
+const auth = useAuth()
 
 const imageContainer = ref<HTMLElement | null>(null)
 
@@ -31,7 +33,7 @@ onMounted(() => {
       opacity: 1,
       x: 0,
       duration: 1,
-      ease: 'power3.out'
+      ease: 'power3.out',
     }
   )
 
@@ -44,15 +46,23 @@ onMounted(() => {
       duration: 0.8,
       stagger: 0.1,
       ease: 'power3.out',
-      delay: 0.2
+      delay: 0.2,
     }
   )
 })
 
+/**
+ * Login
+ *
+ * Authentication is handled through useAuth().
+ * The auth store communicates with the Express backend.
+ */
 const loginUser = async () => {
   errorMessage.value = ''
 
-  if (!email.value || !password.value) {
+  const cleanEmail = email.value.trim()
+
+  if (!cleanEmail || !password.value) {
     errorMessage.value = 'Please enter your email and password.'
     return
   }
@@ -60,37 +70,29 @@ const loginUser = async () => {
   loading.value = true
 
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.value.trim(),
-      password: password.value
-    })
+    await auth.login(cleanEmail, password.value)
 
-    if (error) {
-      errorMessage.value = error.message
-      return
-    }
-
-    if (!data.user) {
-      errorMessage.value = 'Unable to sign in. Please try again.'
-      return
+    if (rememberMe.value) {
+      localStorage.setItem('rememberMe', 'true')
+    } else {
+      localStorage.removeItem('rememberMe')
     }
 
     await router.push('/dashboard')
-  } catch (error) {
-    console.error('Login error:', error)
-
+  } catch (err: any) {
     errorMessage.value =
+      err.response?.data?.message ||
       'Something went wrong. Please check your internet connection and try again.'
   } finally {
     loading.value = false
   }
 }
 
-/*
+/**
  * Open forgot password modal
  */
 const openForgotPassword = () => {
-  forgotEmail.value = email.value
+  forgotEmail.value = email.value.trim()
   forgotError.value = ''
   forgotSuccess.value = ''
 
@@ -102,20 +104,20 @@ const openForgotPassword = () => {
       {
         opacity: 0,
         scale: 0.95,
-        y: 20
+        y: 20,
       },
       {
         opacity: 1,
         scale: 1,
         y: 0,
         duration: 0.35,
-        ease: 'power3.out'
+        ease: 'power3.out',
       }
     )
   }, 10)
 }
 
-/*
+/**
  * Close forgot password modal
  */
 const closeForgotPassword = () => {
@@ -127,18 +129,27 @@ const closeForgotPassword = () => {
     ease: 'power2.in',
     onComplete: () => {
       showForgotPassword.value = false
-    }
+    },
   })
 }
 
-/*
+/**
  * Send password reset email
+ *
+ * NOTE:
+ * The backend does not currently expose
+ * POST /auth/forgot-password.
+ *
+ * This will remain ready for when the
+ * password-reset backend is implemented.
  */
 const sendResetEmail = async () => {
   forgotError.value = ''
   forgotSuccess.value = ''
 
-  if (!forgotEmail.value) {
+  const cleanEmail = forgotEmail.value.trim()
+
+  if (!cleanEmail) {
     forgotError.value = 'Please enter your email address.'
     return
   }
@@ -146,25 +157,15 @@ const sendResetEmail = async () => {
   forgotLoading.value = true
 
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(
-      forgotEmail.value.trim(),
-      {
-        redirectTo: `${window.location.origin}/reset-password`
-      }
-    )
-
-    if (error) {
-      forgotError.value = error.message
-      return
-    }
+    // Backend endpoint will be implemented later.
+    await auth.requestPasswordReset(cleanEmail)
 
     forgotSuccess.value =
       'Password reset instructions have been sent to your email.'
-  } catch (error) {
-    console.error('Password reset error:', error)
-
+  } catch (err: any) {
     forgotError.value =
-      'Something went wrong. Please check your internet connection and try again.'
+      err.response?.data?.message ||
+      "Password reset isn't available yet. Please contact support."
   } finally {
     forgotLoading.value = false
   }
@@ -174,12 +175,11 @@ const sendResetEmail = async () => {
 <template>
   <div class="min-h-screen bg-[#0B0F19] flex">
 
-    <!-- Left Side: Image/Branding -->
+    <!-- Left Side: Image / Branding -->
     <div
       ref="imageContainer"
       class="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden"
     >
-
       <div class="absolute inset-0 bg-emerald-500/10 z-10"></div>
 
       <div
@@ -193,7 +193,6 @@ const sendResetEmail = async () => {
       />
 
       <div class="relative z-20 text-center max-w-lg px-8">
-
         <h2 class="text-4xl font-bold text-white mb-6">
           Welcome Back to Global Funds
         </h2>
@@ -202,7 +201,6 @@ const sendResetEmail = async () => {
           Access your portfolio, track your investments, and discover new
           strategies powered by our advanced AI analytics.
         </p>
-
       </div>
     </div>
 
@@ -210,25 +208,21 @@ const sendResetEmail = async () => {
     <div
       class="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative z-20"
     >
-
       <div
         class="w-full max-w-md bg-[#12151C] border border-gray-800 rounded-2xl p-8 shadow-2xl"
       >
 
         <!-- Logo -->
         <div class="gsap-item flex justify-center mb-8">
-
           <img
             src="/img/logo.png"
             alt="Global Funds"
             class="h-12 w-auto"
           />
-
         </div>
 
         <!-- Heading -->
         <div class="gsap-item text-center mb-8">
-
           <h3 class="text-2xl font-bold text-white mb-2">
             Sign In
           </h3>
@@ -236,7 +230,6 @@ const sendResetEmail = async () => {
           <p class="text-gray-400 text-sm">
             Enter your details to access your account
           </p>
-
         </div>
 
         <!-- Error -->
@@ -247,6 +240,7 @@ const sendResetEmail = async () => {
           {{ errorMessage }}
         </div>
 
+        <!-- Login Form -->
         <form
           @submit.prevent="loginUser"
           class="space-y-5"
@@ -254,7 +248,6 @@ const sendResetEmail = async () => {
 
           <!-- Email -->
           <div class="gsap-item">
-
             <label
               class="block text-sm font-medium text-gray-300 mb-2"
             >
@@ -262,7 +255,6 @@ const sendResetEmail = async () => {
             </label>
 
             <div class="relative">
-
               <span
                 class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
               >
@@ -280,23 +272,19 @@ const sendResetEmail = async () => {
                 class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-gray-600"
                 placeholder="john.doe@example.com"
               />
-
             </div>
-
           </div>
 
           <!-- Password -->
           <div class="gsap-item">
 
             <div class="flex justify-between items-center mb-2">
-
               <label
                 class="block text-sm font-medium text-gray-300"
               >
                 Password
               </label>
 
-              <!-- Forgot Password -->
               <button
                 type="button"
                 @click="openForgotPassword"
@@ -304,11 +292,9 @@ const sendResetEmail = async () => {
               >
                 Forgot password?
               </button>
-
             </div>
 
             <div class="relative">
-
               <span
                 class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
               >
@@ -326,18 +312,15 @@ const sendResetEmail = async () => {
                 class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-gray-600"
                 placeholder="••••••••"
               />
-
             </div>
-
           </div>
 
-          <!-- Remember -->
+          <!-- Remember Me -->
           <div class="gsap-item flex items-center">
-
             <input
+              id="remember"
               v-model="rememberMe"
               type="checkbox"
-              id="remember"
               class="w-4 h-4 rounded border-gray-700 text-emerald-500 bg-[#0B0F19] focus:ring-emerald-500 focus:ring-offset-[#12151C]"
             />
 
@@ -347,7 +330,6 @@ const sendResetEmail = async () => {
             >
               Remember me for 30 days
             </label>
-
           </div>
 
           <!-- Submit -->
@@ -356,7 +338,6 @@ const sendResetEmail = async () => {
             :disabled="loading"
             class="gsap-item w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-[#0B0F19] font-bold py-3.5 rounded-lg transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_25px_rgba(16,185,129,0.4)] mt-4"
           >
-
             <span
               v-if="!loading"
               class="flex items-center justify-center"
@@ -368,25 +349,18 @@ const sendResetEmail = async () => {
               v-else
               class="flex items-center justify-center gap-2"
             >
-
               <Icon
                 icon="lucide:loader-2"
                 class="w-5 h-5 animate-spin"
               />
 
               Signing In...
-
             </span>
-
           </button>
-
         </form>
 
         <!-- Register -->
-        <p
-          class="gsap-item text-center text-sm text-gray-400 mt-8"
-        >
-
+        <p class="gsap-item text-center text-sm text-gray-400 mt-8">
           Don't have an account?
 
           <router-link
@@ -395,16 +369,12 @@ const sendResetEmail = async () => {
           >
             Create one
           </router-link>
-
         </p>
-
       </div>
-
     </div>
 
     <!-- Forgot Password Modal -->
     <Transition name="modal">
-
       <div
         v-if="showForgotPassword"
         class="fixed inset-0 z-[100] flex items-center justify-center p-5"
@@ -427,42 +397,32 @@ const sendResetEmail = async () => {
             @click="closeForgotPassword"
             class="absolute top-5 right-5 w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 hover:text-white hover:bg-[#0B0F19] transition"
           >
-
             <Icon
               icon="lucide:x"
               class="w-5 h-5"
             />
-
           </button>
 
           <!-- Icon -->
           <div
             class="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6"
           >
-
             <Icon
               icon="lucide:key-round"
               class="w-7 h-7 text-emerald-500"
             />
-
           </div>
 
           <!-- Heading -->
           <div class="mb-6 pr-8">
-
-            <h3
-              class="text-2xl font-bold text-white mb-2"
-            >
+            <h3 class="text-2xl font-bold text-white mb-2">
               Forgot Password?
             </h3>
 
-            <p
-              class="text-sm text-gray-400 leading-relaxed"
-            >
+            <p class="text-sm text-gray-400 leading-relaxed">
               Enter your email address and we'll send you
               a secure link to create a new password.
             </p>
-
           </div>
 
           <!-- Error -->
@@ -470,16 +430,12 @@ const sendResetEmail = async () => {
             v-if="forgotError"
             class="mb-5 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-sm flex gap-2"
           >
-
             <Icon
               icon="lucide:circle-alert"
               class="w-5 h-5 flex-shrink-0"
             />
 
-            <span>
-              {{ forgotError }}
-            </span>
-
+            <span>{{ forgotError }}</span>
           </div>
 
           <!-- Success -->
@@ -487,19 +443,15 @@ const sendResetEmail = async () => {
             v-if="forgotSuccess"
             class="mb-5 p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-sm flex gap-2"
           >
-
             <Icon
               icon="lucide:circle-check"
               class="w-5 h-5 flex-shrink-0"
             />
 
-            <span>
-              {{ forgotSuccess }}
-            </span>
-
+            <span>{{ forgotSuccess }}</span>
           </div>
 
-          <!-- Form -->
+          <!-- Reset Form -->
           <form
             v-if="!forgotSuccess"
             @submit.prevent="sendResetEmail"
@@ -507,7 +459,6 @@ const sendResetEmail = async () => {
           >
 
             <div>
-
               <label
                 class="block text-sm font-medium text-gray-300 mb-2"
               >
@@ -515,16 +466,13 @@ const sendResetEmail = async () => {
               </label>
 
               <div class="relative">
-
                 <span
                   class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
                 >
-
                   <Icon
                     icon="lucide:mail"
                     class="w-5 h-5"
                   />
-
                 </span>
 
                 <input
@@ -535,12 +483,9 @@ const sendResetEmail = async () => {
                   class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-gray-600"
                   placeholder="john.doe@example.com"
                 />
-
               </div>
-
             </div>
 
-            <!-- Submit -->
             <button
               type="submit"
               :disabled="forgotLoading"
@@ -551,35 +496,29 @@ const sendResetEmail = async () => {
                 v-if="!forgotLoading"
                 class="flex items-center justify-center gap-2"
               >
-
                 <Icon
                   icon="lucide:send"
                   class="w-5 h-5"
                 />
 
                 Send Reset Link
-
               </span>
 
               <span
                 v-else
                 class="flex items-center justify-center gap-2"
               >
-
                 <Icon
                   icon="lucide:loader-2"
                   class="w-5 h-5 animate-spin"
                 />
 
                 Sending...
-
               </span>
-
             </button>
-
           </form>
 
-          <!-- Close after success -->
+          <!-- Back -->
           <button
             v-if="forgotSuccess"
             type="button"
@@ -589,11 +528,10 @@ const sendResetEmail = async () => {
             Back to Sign In
           </button>
 
-          <!-- Security note -->
+          <!-- Security Notice -->
           <div
             class="flex items-start gap-3 mt-6 pt-5 border-t border-gray-800"
           >
-
             <Icon
               icon="lucide:shield-check"
               class="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0"
@@ -603,15 +541,10 @@ const sendResetEmail = async () => {
               For your security, the password reset link
               will expire after a limited period.
             </p>
-
           </div>
-
         </div>
-
       </div>
-
     </Transition>
-
   </div>
 </template>
 
