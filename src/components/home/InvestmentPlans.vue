@@ -1,247 +1,462 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import api from '../api/client'
 
-gsap.registerPlugin(ScrollTrigger)
+/*
+|--------------------------------------------------------------------------
+| TYPES
+|--------------------------------------------------------------------------
+*/
 
-const sectionHeader = ref<HTMLElement | null>(null)
-const plansGrid = ref<HTMLElement | null>(null)
-const marketWidgetContainer = ref<HTMLElement | null>(null)
+interface InvestmentPlan {
+  id: string
+  name: string
+  icon: string
+  min: number
+  max: number | null // null = Unlimited
+  profit: string
+  duration: string
+  ref: string
+}
 
-const plans = [
+interface WalletOption {
+  id: string
+  coinName: string
+  network: string
+  address: string
+}
+
+/*
+|--------------------------------------------------------------------------
+| STATE
+|--------------------------------------------------------------------------
+*/
+
+const formContainer = ref<HTMLElement | null>(null)
+
+const loading = ref(false)
+const errorMessage = ref('')
+const successMessage = ref('')
+
+const selectedPlanId = ref('')
+const selectedWalletId = ref('')
+const amount = ref('')
+const paymentDate = ref(new Date().toISOString().split('T')[0])
+
+/*
+ * Mirrors the plans defined in your Market/Plans section (same names,
+ * profit %, duration, referral %). Minimum/maximum are parsed to
+ * numbers here so the form can validate against them — "Unlimited"
+ * becomes null (no upper bound).
+ */
+
+const investmentPlans = ref<InvestmentPlan[]>([
+  { id: 'starting', name: 'Starting Plan', icon: 'lucide:leaf', min: 80, max: 4000, profit: '15%', duration: '24 hours', ref: '10%' },
+  { id: 'emy', name: 'Emy Plan', icon: 'lucide:trending-up', min: 550, max: 9990, profit: '20%', duration: '36 hours', ref: '10%' },
+  { id: 'bonus', name: 'Bonus Plan', icon: 'lucide:gift', min: 1200, max: 7000, profit: '45%', duration: '40 hours', ref: '10%' },
+  { id: 'superlative', name: 'Superlative Plan', icon: 'lucide:award', min: 1500, max: 9500, profit: '25%', duration: '36 hours', ref: '10%' },
+  { id: 'loan', name: 'Loan Plan', icon: 'lucide:landmark', min: 2200, max: null, profit: '40%', duration: '20 hours', ref: '10%' },
+  { id: 'weekend', name: 'Weekend Plan', icon: 'lucide:calendar', min: 1000, max: 30000, profit: '50%', duration: '9 hours', ref: '10%' },
+  { id: 'gold', name: 'Gold Plan', icon: 'lucide:coins', min: 4500, max: null, profit: '55%', duration: '2 days', ref: '10%' },
+  { id: 'xmas', name: 'Xmas Bonus', icon: 'lucide:snowflake', min: 750, max: 15000, profit: '45%', duration: '1 day', ref: '10%' },
+  { id: 'upgrade', name: 'Upgrade Plan', icon: 'lucide:arrow-up-circle', min: 950, max: null, profit: '25%', duration: 'Custom', ref: '10%' },
+])
+
+/*
+ * Still hardcoded until a backend endpoint for deposit wallets
+ * exists — replace with api.get('/wallets') once available.
+ */
+
+const walletOptions = ref<WalletOption[]>([
   {
-    name: 'Starting Plan',
-    icon: 'lucide:leaf',
-    min: '$80',
-    max: '$4,000',
-    profit: '15%',
-    duration: '24 hours',
-    ref: '10%',
-    isLimited: false
+    id: 'usdt-bep20',
+    coinName: 'USDT BEP20',
+    network: 'Binance Chain (BEP2)',
+    address: '0xE6f89E13aeb510cE485B10155cE99047dB6a30A2',
   },
   {
-    name: 'Emy Plan',
-    icon: 'lucide:trending-up',
-    min: '$550',
-    max: '$9,990',
-    profit: '20%',
-    duration: '36 hours',
-    ref: '10%',
-    isLimited: false
+    id: 'btc',
+    coinName: 'Bitcoin',
+    network: 'Bitcoin Network',
+    address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
   },
   {
-    name: 'Bonus Plan',
-    icon: 'lucide:gift',
-    min: '$1,200',
-    max: '$7,000',
-    profit: '45%',
-    duration: '40 hours',
-    ref: '10%',
-    isLimited: false
+    id: 'usdt-trc20',
+    coinName: 'USDT TRC20',
+    network: 'Tron (TRC20)',
+    address: 'TXYZ1234567890abcdefghijklmnopqrstuv',
   },
-  {
-    name: 'Superlative Plan',
-    icon: 'lucide:award',
-    min: '$1,500',
-    max: '$9,500',
-    profit: '25%',
-    duration: '36 hours',
-    ref: '10%',
-    isLimited: false
-  },
-  {
-    name: 'Loan Plan',
-    icon: 'lucide:landmark',
-    min: '$2,200',
-    max: 'Unlimited',
-    profit: '40%',
-    duration: '20 hours',
-    ref: '10%',
-    isLimited: false
-  },
-  {
-    name: 'Weekend Plan',
-    icon: 'lucide:calendar',
-    min: '$1,000',
-    max: '$30,000',
-    profit: '50%',
-    duration: '9 hours',
-    ref: '10%',
-    isLimited: true
-  },
-  {
-    name: 'Gold Plan',
-    icon: 'lucide:coins',
-    min: '$4,500',
-    max: 'Unlimited',
-    profit: '55%',
-    duration: '2 days',
-    ref: '10%',
-    isLimited: false
-  },
-  {
-    name: 'Xmas Bonus',
-    icon: 'lucide:snowflake',
-    min: '$750',
-    max: '$15,000',
-    profit: '45%',
-    duration: '1 day',
-    ref: '10%',
-    isLimited: true
-  },
-  {
-    name: 'Upgrade Plan',
-    icon: 'lucide:arrow-up-circle',
-    min: '$950',
-    max: 'Unlimited',
-    profit: '25%',
-    duration: 'Custom',
-    ref: '10%',
-    isLimited: false
-  }
-]
+])
+
+/*
+|--------------------------------------------------------------------------
+| COMPUTED
+|--------------------------------------------------------------------------
+*/
+
+const selectedPlan = computed(() =>
+  investmentPlans.value.find((p) => p.id === selectedPlanId.value) ?? null
+)
+
+const selectedWallet = computed(() =>
+  walletOptions.value.find((w) => w.id === selectedWalletId.value) ?? null
+)
+
+const planRangeLabel = computed(() => {
+  if (!selectedPlan.value) return ''
+
+  const min = `$${selectedPlan.value.min.toLocaleString()}`
+  const max = selectedPlan.value.max
+    ? `$${selectedPlan.value.max.toLocaleString()}`
+    : 'Unlimited'
+
+  return `${min} - ${max}`
+})
+
+/*
+|--------------------------------------------------------------------------
+| LIFECYCLE
+|--------------------------------------------------------------------------
+*/
 
 onMounted(() => {
-  // Section Header Entrance Animation
-  gsap.fromTo(sectionHeader.value,
-    { opacity: 0, y: 40 },
-    {
-      opacity: 1,
-      y: 0,
-      duration: 1,
-      ease: 'power3.out',
-      scrollTrigger: {
-        trigger: sectionHeader.value,
-        start: 'top 85%',
-      }
-    }
-  )
-
-  // Pricing Cards Staggered Animation
-  gsap.fromTo('.plan-card',
-    { opacity: 0, y: 50 },
-    {
-      opacity: 1,
-      y: 0,
-      duration: 0.8,
-      stagger: 0.1,
-      ease: 'power3.out',
-      scrollTrigger: {
-        trigger: plansGrid.value,
-        start: 'top 80%',
-      }
-    }
-  )
-
-  // Inject TradingView Market Cap Screener Widget
-  if (marketWidgetContainer.value) {
-    const script = document.createElement('script')
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-screener.js'
-    script.async = true
-    script.type = 'text/javascript'
-    script.innerHTML = JSON.stringify({
-      width: '100%',
-      height: '600',
-      defaultColumn: 'overview',
-      screener_type: 'crypto_mkt',
-      displayCurrency: 'USD',
-      colorTheme: 'dark',
-      locale: 'en',
-      isTransparent: true
-    })
-    marketWidgetContainer.value.appendChild(script)
+  if (walletOptions.value.length > 0) {
+    selectedWalletId.value = walletOptions.value[0].id
   }
+
+  if (investmentPlans.value.length > 0) {
+    selectedPlanId.value = investmentPlans.value[0].id
+    amount.value = String(investmentPlans.value[0].min)
+  }
+
+  gsap.fromTo(
+    formContainer.value,
+    { opacity: 0, y: 20 },
+    { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }
+  )
+
+  gsap.fromTo(
+    '.form-item',
+    { opacity: 0, y: 15 },
+    {
+      opacity: 1,
+      y: 0,
+      duration: 0.5,
+      stagger: 0.05,
+      ease: 'power3.out',
+      delay: 0.15,
+    }
+  )
 })
+
+/*
+|--------------------------------------------------------------------------
+| PLAN SELECTION
+|--------------------------------------------------------------------------
+*/
+
+// When the plan changes, prefill the amount with that plan's minimum
+// so the user isn't left guessing what's acceptable.
+const onPlanChange = () => {
+  if (selectedPlan.value) {
+    amount.value = String(selectedPlan.value.min)
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| CLIPBOARD
+|--------------------------------------------------------------------------
+*/
+
+const copied = ref(false)
+
+const copyAddress = async () => {
+  if (!selectedWallet.value) return
+
+  try {
+    await navigator.clipboard.writeText(selectedWallet.value.address)
+    copied.value = true
+
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
+  } catch (error) {
+    console.error('Copy failed:', error)
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| SUBMIT
+|--------------------------------------------------------------------------
+*/
+
+const submitTopUp = async () => {
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  if (!selectedPlan.value) {
+    errorMessage.value = 'Please select an investment plan.'
+    return
+  }
+
+  if (!selectedWallet.value) {
+    errorMessage.value = 'Please select a wallet.'
+    return
+  }
+
+  const numericAmount = Number(amount.value)
+
+  if (!amount.value || numericAmount <= 0) {
+    errorMessage.value = 'Please enter a valid amount.'
+    return
+  }
+
+  if (numericAmount < selectedPlan.value.min) {
+    errorMessage.value = `Minimum for ${selectedPlan.value.name} is $${selectedPlan.value.min.toLocaleString()}.`
+    return
+  }
+
+  if (selectedPlan.value.max !== null && numericAmount > selectedPlan.value.max) {
+    errorMessage.value = `Maximum for ${selectedPlan.value.name} is $${selectedPlan.value.max.toLocaleString()}.`
+    return
+  }
+
+  loading.value = true
+
+  try {
+    // Backend endpoint for deposits isn't built yet — this call is
+    // ready for when POST /wallet/deposit exists.
+    await api.post('/wallet/deposit', {
+      planId: selectedPlan.value.id,
+      coinName: selectedWallet.value.coinName,
+      network: selectedWallet.value.network,
+      walletAddress: selectedWallet.value.address,
+      amount: numericAmount,
+      paymentDate: paymentDate.value,
+    })
+
+    successMessage.value =
+      'Your deposit has been submitted. Funds will reflect after verification.'
+
+    amount.value = String(selectedPlan.value.min)
+  } catch (err: any) {
+    errorMessage.value =
+      err.response?.data?.message ||
+      'Something went wrong while submitting your deposit. Please try again.'
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
-  <section class="py-24 bg-[#0B0F19] text-white relative z-20">
-    <div class="max-w-7xl mx-auto px-6">
-      
-      <!-- Section Header -->
-      <div ref="sectionHeader" class="text-center max-w-3xl mx-auto mb-16">
-        <span class="text-emerald-400 font-semibold text-sm tracking-wider uppercase mb-3 block">
-          Investment Plans
-        </span>
-        <h2 class="text-3xl md:text-5xl font-bold tracking-tight text-white mb-4">
-          Grow Your Wealth With Our Strategic Plans
-        </h2>
-      </div>
+  <div class="min-h-screen bg-[#0B0F19] text-white p-5 md:p-8">
+    <div ref="formContainer" class="max-w-lg mx-auto">
 
-      <!-- Plans Grid -->
-      <div ref="plansGrid" class="flex flex-wrap justify-center gap-6 md:gap-8 mb-24">
-        
-        <div 
-          v-for="(plan, index) in plans" 
-          :key="index"
-          class="plan-card w-full md:w-[calc(50%-16px)] lg:w-[calc(33.333%-22px)] relative bg-[#12151C] rounded-2xl p-8 border border-gray-800 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-2 group shadow-lg flex flex-col items-center"
+      <!-- Fund Wallet Button / Heading -->
+      <div class="form-item text-center mb-6">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-[#0B0F19] font-bold px-6 py-3 rounded-xl transition-colors"
         >
-          
-          <!-- Limited Time Ribbon -->
-          <div v-if="plan.isLimited" class="absolute top-0 right-0 overflow-hidden w-24 h-24 rounded-tr-2xl z-10">
-            <div class="absolute bg-red-600 text-white text-[9px] font-bold uppercase tracking-wider py-1.5 w-36 text-center transform rotate-45 top-5 -right-10 shadow-md">
-              Limited Time
+          <Icon icon="lucide:wallet" class="w-5 h-5" />
+          Fund Wallet
+        </button>
+      </div>
+
+      <!-- Form Card -->
+      <div class="bg-[#12151C] border border-gray-800 rounded-2xl p-6 md:p-8">
+
+        <!-- Info Banner -->
+        <p class="form-item text-sm text-gray-400 mb-6 text-center">
+          Funds added to your wallet will be available shortly after
+          verification.
+        </p>
+
+        <!-- Error -->
+        <div
+          v-if="errorMessage"
+          class="form-item mb-5 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-sm"
+        >
+          {{ errorMessage }}
+        </div>
+
+        <!-- Success -->
+        <div
+          v-if="successMessage"
+          class="form-item mb-5 p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-sm flex gap-2"
+        >
+          <Icon icon="lucide:check-circle" class="w-5 h-5 flex-shrink-0" />
+          <span>{{ successMessage }}</span>
+        </div>
+
+        <form @submit.prevent="submitTopUp" class="space-y-5">
+
+          <!-- Investment Plan -->
+          <div class="form-item">
+            <label class="block text-sm font-medium text-gray-300 mb-2">
+              Investment Plan
+            </label>
+
+            <select
+              v-model="selectedPlanId"
+              @change="onPlanChange"
+              class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors appearance-none"
+            >
+              <option
+                v-for="plan in investmentPlans"
+                :key="plan.id"
+                :value="plan.id"
+              >
+                {{ plan.name }} - {{ plan.profit }} ROI for {{ plan.duration }}
+              </option>
+            </select>
+
+            <!-- Min/Max info for the selected plan -->
+            <div
+              v-if="selectedPlan"
+              class="flex items-center justify-between mt-2 px-1 text-xs text-gray-500"
+            >
+              <span class="flex items-center gap-1.5">
+                <Icon :icon="selectedPlan.icon" class="w-3.5 h-3.5 text-emerald-500" />
+                Range: {{ planRangeLabel }}
+              </span>
+              <span class="text-emerald-400">Referral {{ selectedPlan.ref }}</span>
             </div>
           </div>
 
-          <!-- Plan Icon -->
-          <div class="mb-6">
-            <Icon :icon="plan.icon" class="w-10 h-10 text-emerald-500 group-hover:scale-110 transition-transform duration-300" />
+          <!-- Select Wallet -->
+          <div class="form-item">
+            <label class="block text-sm font-medium text-gray-300 mb-2">
+              Select Wallet
+            </label>
+
+            <select
+              v-model="selectedWalletId"
+              class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors appearance-none"
+            >
+              <option
+                v-for="wallet in walletOptions"
+                :key="wallet.id"
+                :value="wallet.id"
+              >
+                {{ wallet.coinName }}
+              </option>
+            </select>
           </div>
 
-          <!-- Plan Name -->
-          <h3 class="text-xl font-bold text-emerald-500 mb-8 text-center">{{ plan.name }}</h3>
+          <!-- Wallet Address (read-only, auto-filled) -->
+          <div class="form-item" v-if="selectedWallet">
+            <label class="block text-sm font-medium text-gray-300 mb-2">
+              Wallet Address
+            </label>
 
-          <!-- Plan Details -->
-          <div class="w-full space-y-4 mb-8">
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-gray-400">Minimum:</span>
-              <span class="font-bold text-white">{{ plan.min }}</span>
-            </div>
-            
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-gray-400">Maximum:</span>
-              <span class="font-bold text-white">{{ plan.max }}</span>
-            </div>
-            
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-gray-400">Profit:</span>
-              <span class="font-bold text-white">{{ plan.profit }}</span>
-            </div>
-            
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-gray-400">Duration:</span>
-              <span class="font-bold text-white">{{ plan.duration }}</span>
-            </div>
+            <div class="relative">
+              <input
+                :value="selectedWallet.address"
+                readonly
+                class="w-full bg-[#0B0F19]/60 border border-gray-800 rounded-lg px-4 py-3 pr-12 text-gray-400 text-sm truncate cursor-default focus:outline-none"
+              />
 
-            <!-- New Referral Row -->
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-gray-400">Referral:</span>
-              <span class="font-bold text-emerald-400">{{ plan.ref }}</span>
+              <button
+                type="button"
+                @click="copyAddress"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-emerald-500 transition-colors"
+              >
+                <Icon
+                  :icon="copied ? 'lucide:check' : 'lucide:copy'"
+                  class="w-4 h-4"
+                />
+              </button>
             </div>
           </div>
 
-          <!-- Invest Button -->
-          <router-link 
-            to="/register" 
-            class="w-full max-w-[200px] mt-auto text-center py-3 rounded-lg font-bold bg-emerald-500 hover:bg-emerald-400 text-[#0B0F19] transition-all duration-300 shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_25px_rgba(16,185,129,0.4)]"
+          <!-- Coin Name (read-only, auto-filled) -->
+          <div class="form-item" v-if="selectedWallet">
+            <label class="block text-sm font-medium text-gray-300 mb-2">
+              Coin Name
+            </label>
+
+            <input
+              :value="selectedWallet.coinName"
+              readonly
+              class="w-full bg-[#0B0F19]/60 border border-gray-800 rounded-lg px-4 py-3 text-gray-400 cursor-default focus:outline-none"
+            />
+          </div>
+
+          <!-- Select Network (read-only, auto-filled) -->
+          <div class="form-item" v-if="selectedWallet">
+            <label class="block text-sm font-medium text-gray-300 mb-2">
+              Select Network
+            </label>
+
+            <input
+              :value="selectedWallet.network"
+              readonly
+              class="w-full bg-[#0B0F19]/60 border border-gray-800 rounded-lg px-4 py-3 text-gray-400 cursor-default focus:outline-none"
+            />
+          </div>
+
+          <!-- Amount -->
+          <div class="form-item">
+            <label class="block text-sm font-medium text-gray-300 mb-2">
+              Amount
+            </label>
+
+            <input
+              v-model="amount"
+              type="number"
+              :min="selectedPlan?.min ?? 0"
+              :max="selectedPlan?.max ?? undefined"
+              step="0.01"
+              placeholder="0.00"
+              class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-gray-600"
+            />
+
+            <p v-if="selectedPlan" class="mt-2 px-1 text-xs text-gray-500">
+              Minimum investment for {{ selectedPlan.name }}:
+              <span class="text-gray-300 font-medium">
+                ${{ selectedPlan.min.toLocaleString() }}
+              </span>
+            </p>
+          </div>
+
+          <!-- Payment Date -->
+          <div class="form-item">
+            <label class="block text-sm font-medium text-gray-300 mb-2">
+              Payment Date
+            </label>
+
+            <input
+              v-model="paymentDate"
+              type="date"
+              class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+            />
+          </div>
+
+          <!-- Submit -->
+          <button
+            type="submit"
+            :disabled="loading"
+            class="form-item w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-[#0B0F19] font-bold py-3.5 rounded-lg transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_25px_rgba(16,185,129,0.4)]"
           >
-            Invest Now
-          </router-link>
-          
-        </div>
+            <span v-if="!loading" class="flex items-center justify-center gap-2">
+              <Icon icon="lucide:arrow-up-circle" class="w-5 h-5" />
+              Top Up
+            </span>
 
+            <span v-else class="flex items-center justify-center gap-2">
+              <Icon icon="lucide:loader-2" class="w-5 h-5 animate-spin" />
+              Submitting...
+            </span>
+          </button>
+
+        </form>
       </div>
-
-      <!-- Live Market Cap Table Section -->
-      <div class="w-full bg-[#12151C] rounded-2xl border border-gray-800 shadow-xl p-4 overflow-hidden">
-        <div ref="marketWidgetContainer" class="tradingview-widget-container w-full h-[600px]">
-          <div class="tradingview-widget-container__widget h-full"></div>
-        </div>
-      </div>
-
     </div>
-  </section>
+  </div>
 </template>
