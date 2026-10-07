@@ -237,15 +237,19 @@ const submitTopUp = async () => {
   loading.value = true
 
   try {
-    // Backend endpoint for deposits isn't built yet — this call is
-    // ready for when POST /wallet/deposit exists.
-    await api.post('/wallet/deposit', {
-      planId: selectedPlan.value.id,
-      coinName: selectedWallet.value.coinName,
-      network: selectedWallet.value.network,
-      walletAddress: selectedWallet.value.address,
+    // Matches your real backend contract:
+    // POST /api/v1/transactions — { type, amount, metadata }
+    await api.post('/transactions', {
+      type: 'DEPOSIT',
       amount: numericAmount,
-      paymentDate: paymentDate.value,
+      metadata: {
+        planId: selectedPlan.value.id,
+        planName: selectedPlan.value.name,
+        coinName: selectedWallet.value.coinName,
+        network: selectedWallet.value.network,
+        walletAddress: selectedWallet.value.address,
+        paymentDate: paymentDate.value,
+      },
     })
 
     successMessage.value =
