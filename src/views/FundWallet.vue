@@ -59,19 +59,14 @@ const walletOptions = ref<WalletOption[]>([
     id: 'usdt-bep20',
     coinName: 'USDT BEP20',
     network: 'Binance Chain (BEP2)',
-    address: '0xE6f89E13aeb510cE485B10155cE99047dB6a30A2',
+    address: '0xb67d0d44ffd3462c53f1277c9b64e3dbabef09a8',
   },
-  {
-    id: 'btc',
-    coinName: 'Bitcoin',
-    network: 'Bitcoin Network',
-    address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-  },
+  
   {
     id: 'usdt-trc20',
     coinName: 'USDT TRC20',
     network: 'Tron (TRC20)',
-    address: 'TXYZ1234567890abcdefghijklmnopqrstuv',
+    address: 'TARfxkcK4qDXRHb3E5254VtZpnLotGxiu6',
   },
 ])
 
