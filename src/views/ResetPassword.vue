@@ -1,409 +1,367 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import gsap from 'gsap'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import api from '../api/client'
 
 const router = useRouter()
+const route = useRoute()
 
-/*
-|--------------------------------------------------------------------------
-| USER
-|--------------------------------------------------------------------------
-*/
+const imageContainer = ref<HTMLElement | null>(null)
 
-interface AuthUser {
-  id: string
-  email: string
-  firstName?: string
-  lastName?: string
-}
+const password = ref('')
+const confirmPassword = ref('')
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 
-const user = ref<AuthUser | null>(null)
-
-const loading = ref(true)
-const dataLoading = ref(true)
-const mobileMenuOpen = ref(false)
-const loggingOut = ref(false)
-
-/*
-|--------------------------------------------------------------------------
-| WALLET DATA
-|--------------------------------------------------------------------------
-*/
-
-const portfolioValue = ref(0)
-const totalInvested = ref(0)
-const totalProfit = ref(0)
-const availableBalance = ref(0)
-
-const currency = ref('USD')
-
-/*
-|--------------------------------------------------------------------------
-| INVESTMENT DATA
-|--------------------------------------------------------------------------
-*/
-
-const activeInvestments = ref(0)
-
-/*
-|--------------------------------------------------------------------------
-| ERROR
-|--------------------------------------------------------------------------
-*/
-
+const loading = ref(false)
 const errorMessage = ref('')
+const successMessage = ref('')
 
-/*
-|--------------------------------------------------------------------------
-| CURRENCY FORMATTER
-|--------------------------------------------------------------------------
-*/
+// The reset token arrives as a query param on the link sent by email,
+// e.g. /reset-password?token=abc123
+const resetToken = ref('')
 
-const formatMoney = (amount: number) => {
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount)
-}
+onMounted(() => {
+  resetToken.value = (route.query.token as string) || ''
 
-/*
-|--------------------------------------------------------------------------
-| CURRENCY SYMBOL
-|--------------------------------------------------------------------------
-*/
+  if (!resetToken.value) {
+    errorMessage.value =
+      'This reset link is invalid or has expired. Please request a new one.'
+  }
 
-const currencySymbol = computed(() => {
-  if (currency.value === 'NGN') return '₦'
-  if (currency.value === 'GBP') return '£'
-  if (currency.value === 'EUR') return '€'
+  gsap.fromTo(
+    imageContainer.value,
+    { opacity: 0, x: -50 },
+    {
+      opacity: 1,
+      x: 0,
+      duration: 1,
+      ease: 'power3.out'
+    }
+  )
 
-  return '$'
+  gsap.fromTo(
+    '.gsap-item',
+    { opacity: 0, y: 20 },
+    {
+      opacity: 1,
+      y: 0,
+      duration: 0.8,
+      stagger: 0.1,
+      ease: 'power3.out',
+      delay: 0.2
+    }
+  )
 })
 
-/*
-|--------------------------------------------------------------------------
-| CHECK AUTHENTICATION
-|--------------------------------------------------------------------------
-*/
+const resetPassword = async () => {
+  errorMessage.value = ''
+  successMessage.value = ''
 
-const checkUser = async () => {
-  const token = localStorage.getItem('token')
-
-  if (!token) {
-    await router.replace('/login')
+  if (!resetToken.value) {
+    errorMessage.value =
+      'This reset link is invalid or has expired. Please request a new one.'
     return
   }
 
+  if (!password.value || !confirmPassword.value) {
+    errorMessage.value = 'Please fill in both password fields.'
+    return
+  }
+
+  if (password.value.length < 8) {
+    errorMessage.value = 'Password must be at least 8 characters.'
+    return
+  }
+
+  if (password.value !== confirmPassword.value) {
+    errorMessage.value = 'Passwords do not match.'
+    return
+  }
+
+  loading.value = true
+
   try {
-    const response = await api.get('/auth/me')
+    await api.post('/auth/reset-password', {
+      token: resetToken.value,
+      password: password.value
+    })
 
-    user.value = response.data?.data?.user ?? null
+    successMessage.value =
+      'Your password has been reset. Redirecting you to sign in...'
 
-    if (!user.value) {
-      throw new Error('User information was not returned.')
-    }
-
-  } catch (error) {
-    console.error('Authentication error:', error)
-
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-
-    await router.replace('/login')
-
+    setTimeout(() => {
+      router.push('/login')
+    }, 2000)
+  } catch (err: any) {
+    errorMessage.value =
+      err.response?.data?.message ||
+      'Something went wrong. Your reset link may have expired — please request a new one.'
   } finally {
     loading.value = false
   }
 }
-
-/*
-|--------------------------------------------------------------------------
-| LOAD WALLET
-|--------------------------------------------------------------------------
-*/
-
-const loadWallet = async () => {
-  if (!user.value) return
-
-  dataLoading.value = true
-  errorMessage.value = ''
-
-  try {
-    const response = await api.get('/wallet')
-
-    const data = response.data?.data
-
-    /*
-     * If the wallet doesn't exist yet, keep the dashboard
-     * at zero rather than showing an error.
-     */
-
-    if (!data) {
-      portfolioValue.value = 0
-      totalInvested.value = 0
-      totalProfit.value = 0
-      availableBalance.value = 0
-
-      return
-    }
-
-    portfolioValue.value = Number(data.balance ?? 0)
-    totalInvested.value = Number(data.investedBalance ?? 0)
-    totalProfit.value = Number(data.profit ?? 0)
-    availableBalance.value = Number(data.availableBalance ?? 0)
-    currency.value = data.currency || 'USD'
-
-  } catch (error) {
-    console.error('Wallet loading error:', error)
-
-    errorMessage.value =
-      'Something went wrong while loading your wallet.'
-
-  } finally {
-    dataLoading.value = false
-  }
-}
-
-/*
-|--------------------------------------------------------------------------
-| LOAD INVESTMENTS
-|--------------------------------------------------------------------------
-*/
-
-const loadInvestments = async () => {
-  if (!user.value) return
-
-  try {
-    const response = await api.get('/investments', {
-      params: { status: 'active' }
-    })
-
-    activeInvestments.value = response.data?.data?.length ?? 0
-
-  } catch (error) {
-    console.error('Investment loading error:', error)
-  }
-}
-
-/*
-|--------------------------------------------------------------------------
-| LOAD DASHBOARD DATA
-|--------------------------------------------------------------------------
-*/
-
-const loadDashboardData = async () => {
-  await Promise.all([
-    loadWallet(),
-    loadInvestments()
-  ])
-}
-
-/*
-|--------------------------------------------------------------------------
-| LOGOUT
-|--------------------------------------------------------------------------
-*/
-
-const logout = async () => {
-  loggingOut.value = true
-
-  try {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-
-    user.value = null
-
-    await router.replace('/login')
-
-  } catch (error) {
-    console.error('Logout error:', error)
-
-  } finally {
-    loggingOut.value = false
-  }
-}
-
-/*
-|--------------------------------------------------------------------------
-| DASHBOARD ANIMATION
-|--------------------------------------------------------------------------
-*/
-
-const animateDashboard = () => {
-  gsap.fromTo(
-    '.dashboard-item',
-    {
-      opacity: 0,
-      y: 20
-    },
-    {
-      opacity: 1,
-      y: 0,
-      duration: 0.7,
-      stagger: 0.08,
-      ease: 'power3.out'
-    }
-  )
-}
-
-/*
-|--------------------------------------------------------------------------
-| START
-|--------------------------------------------------------------------------
-*/
-
-onMounted(async () => {
-  await checkUser()
-
-  if (!user.value) return
-
-  await loadDashboardData()
-
-  animateDashboard()
-})
 </script>
 
-
 <template>
+  <div class="min-h-screen bg-[#0B0F19] flex">
 
-  <!-- ========================================================= -->
-  <!-- LOADING -->
-  <!-- ========================================================= -->
+    <!-- Left Side -->
+    <div
+      ref="imageContainer"
+      class="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden"
+    >
+      <div class="absolute inset-0 bg-emerald-500/10 z-10"></div>
 
-  <div
-    v-if="loading"
-    class="min-h-screen bg-[#0B0F19] flex items-center justify-center"
-  >
+      <div
+        class="absolute inset-0 bg-gradient-to-r from-[#0B0F19] via-transparent to-[#0B0F19] z-10"
+      ></div>
 
-    <div class="text-center">
-
-      <Icon
-        icon="lucide:loader-2"
-        class="w-10 h-10 text-emerald-500 animate-spin mx-auto mb-4"
+      <img
+        src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1920&q=80"
+        alt="Global Funds"
+        class="absolute inset-0 w-full h-full object-cover opacity-40"
       />
 
-      <p class="text-gray-400 text-sm">
-        Loading your dashboard...
-      </p>
+      <div class="relative z-20 text-center max-w-lg px-8">
+
+        <div class="flex justify-center mb-6">
+          <div
+            class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center"
+          >
+            <Icon
+              icon="lucide:shield-check"
+              class="w-8 h-8 text-emerald-500"
+            />
+          </div>
+        </div>
+
+        <h2 class="text-4xl font-bold text-white mb-6">
+          Create a New Password
+        </h2>
+
+        <p class="text-gray-400 text-lg leading-relaxed">
+          Choose a strong password to keep your Global Funds account
+          secure.
+        </p>
+      </div>
+    </div>
+
+    <!-- Right Side -->
+    <div
+      class="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative z-20"
+    >
+
+      <div
+        class="w-full max-w-md bg-[#12151C] border border-gray-800 rounded-2xl p-8 shadow-2xl"
+      >
+
+        <!-- Logo -->
+        <div class="gsap-item flex justify-center mb-8">
+          <img
+            src="/img/logo.png"
+            alt="Global Funds"
+            class="h-12 w-auto"
+          />
+        </div>
+
+        <!-- Heading -->
+        <div class="gsap-item text-center mb-8">
+
+          <div
+            class="mx-auto mb-5 w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center"
+          >
+            <Icon
+              icon="lucide:lock-keyhole"
+              class="w-7 h-7 text-emerald-500"
+            />
+          </div>
+
+          <h3 class="text-2xl font-bold text-white mb-2">
+            Reset Password
+          </h3>
+
+          <p class="text-gray-400 text-sm leading-relaxed">
+            Enter a new password for your account below.
+          </p>
+
+        </div>
+
+        <!-- Error -->
+        <div
+          v-if="errorMessage"
+          class="gsap-item mb-5 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-sm"
+        >
+          {{ errorMessage }}
+        </div>
+
+        <!-- Success -->
+        <div
+          v-if="successMessage"
+          class="gsap-item mb-5 p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-sm flex gap-3"
+        >
+          <Icon
+            icon="lucide:check-circle"
+            class="w-5 h-5 flex-shrink-0"
+          />
+
+          <span>
+            {{ successMessage }}
+          </span>
+        </div>
+
+        <!-- Form -->
+        <form
+          v-if="!successMessage"
+          @submit.prevent="resetPassword"
+          class="space-y-5"
+        >
+
+          <!-- New Password -->
+          <div class="gsap-item">
+
+            <label
+              class="block text-sm font-medium text-gray-300 mb-2"
+            >
+              New Password
+            </label>
+
+            <div class="relative">
+
+              <span
+                class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+              >
+                <Icon
+                  icon="lucide:lock"
+                  class="w-5 h-5"
+                />
+              </span>
+
+              <input
+                v-model="password"
+                :type="showPassword ? 'text' : 'password'"
+                required
+                autocomplete="new-password"
+                class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg pl-11 pr-11 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-gray-600"
+                placeholder="••••••••"
+              />
+
+              <button
+                type="button"
+                @click="showPassword = !showPassword"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                <Icon
+                  :icon="showPassword ? 'lucide:eye-off' : 'lucide:eye'"
+                  class="w-5 h-5"
+                />
+              </button>
+
+            </div>
+
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="gsap-item">
+
+            <label
+              class="block text-sm font-medium text-gray-300 mb-2"
+            >
+              Confirm New Password
+            </label>
+
+            <div class="relative">
+
+              <span
+                class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+              >
+                <Icon
+                  icon="lucide:lock"
+                  class="w-5 h-5"
+                />
+              </span>
+
+              <input
+                v-model="confirmPassword"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                required
+                autocomplete="new-password"
+                class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg pl-11 pr-11 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-gray-600"
+                placeholder="••••••••"
+              />
+
+              <button
+                type="button"
+                @click="showConfirmPassword = !showConfirmPassword"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                <Icon
+                  :icon="showConfirmPassword ? 'lucide:eye-off' : 'lucide:eye'"
+                  class="w-5 h-5"
+                />
+              </button>
+
+            </div>
+
+          </div>
+
+          <!-- Submit -->
+          <button
+            type="submit"
+            :disabled="loading"
+            class="gsap-item w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-[#0B0F19] font-bold py-3.5 rounded-lg transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_25px_rgba(16,185,129,0.4)]"
+          >
+
+            <span
+              v-if="!loading"
+              class="flex items-center justify-center gap-2"
+            >
+              <Icon
+                icon="lucide:shield-check"
+                class="w-5 h-5"
+              />
+
+              Reset Password
+            </span>
+
+            <span
+              v-else
+              class="flex items-center justify-center gap-2"
+            >
+              <Icon
+                icon="lucide:loader-2"
+                class="w-5 h-5 animate-spin"
+              />
+
+              Resetting...
+            </span>
+
+          </button>
+
+        </form>
+
+        <!-- Back to Login -->
+        <div class="gsap-item text-center mt-8">
+
+          <router-link
+            to="/login"
+            class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-emerald-500 transition-colors"
+          >
+            <Icon
+              icon="lucide:arrow-left"
+              class="w-4 h-4"
+            />
+
+            Back to Sign In
+          </router-link>
+
+        </div>
+
+      </div>
 
     </div>
 
   </div>
-
-
-  <!-- ========================================================= -->
-  <!-- DASHBOARD -->
-  <!-- ========================================================= -->
-
-  <div
-    v-else
-    class="min-h-screen bg-[#0B0F19] text-white"
-  >
-
-
-    <!-- ======================================================= -->
-    <!-- MOBILE HEADER -->
-    <!-- ======================================================= -->
-
-    <header
-      class="lg:hidden h-16 bg-[#12151C] border-b border-gray-800 flex items-center justify-between px-5 sticky top-0 z-50"
-    >
-
-      <img
-        src="/img/logo.png"
-        alt="Global Funds"
-        class="h-9 w-auto"
-      />
-
-      <button
-        @click="mobileMenuOpen = !mobileMenuOpen"
-        class="w-10 h-10 rounded-lg bg-[#0B0F19] border border-gray-800 flex items-center justify-center text-gray-300"
-      >
-
-        <Icon
-          :icon="
-            mobileMenuOpen
-              ? 'lucide:x'
-              : 'lucide:menu'
-          "
-          class="w-5 h-5"
-        />
-
-      </button>
-
-    </header>
-
-
-    <!-- ======================================================= -->
-    <!-- MOBILE MENU -->
-    <!-- ======================================================= -->
-
-    <div
-      v-if="mobileMenuOpen"
-      class="lg:hidden fixed inset-0 top-16 bg-[#0B0F19] z-40 p-5"
-    >
-
-      <nav class="space-y-2">
-
-        <router-link
-          to="/dashboard"
-          @click="mobileMenuOpen = false"
-          class="flex items-center gap-3 px-4 py-3 rounded-lg bg-emerald-500/10 text-emerald-500"
-        >
-
-          <Icon
-            icon="lucide:layout-dashboard"
-            class="w-5 h-5"
-          />
-
-          Dashboard
-
-        </router-link>
-
-
-        <router-link
-          to="/market"
-          @click="mobileMenuOpen = false"
-          class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-[#12151C] hover:text-white transition"
-        >
-
-          <Icon
-            icon="lucide:chart-candlestick"
-            class="w-5 h-5"
-          />
-
-          Market
-
-        </router-link>
-
-
-        <button
-          @click="logout"
-          class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-500/10 transition"
-        >
-
-          <Icon
-            icon="lucide:log-out"
-            class="w-5 h-5"
-          />
-
-          Sign Out
-
-        </button>
-
-      </nav>
-
-    </div>
-
-
-    <!-- ======================================================= -->
-    <!-- MAIN LAYOUT -->
-    <!-- ======================================================= -->
-
-    <div class="flex min-h-screen">
-
-
-      <!-- ============================================
+</template>
