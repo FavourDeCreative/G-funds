@@ -2,7 +2,10 @@
 import { onMounted, ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import gsap from 'gsap'
+import { useRoute } from 'vue-router'
 import api from '../api/client'
+
+const route = useRoute()
 
 /*
 |--------------------------------------------------------------------------
@@ -13,8 +16,12 @@ import api from '../api/client'
 interface InvestmentPlan {
   id: string
   name: string
-  roi: number
-  durationDays: number
+  icon: string
+  min: number
+  max: number | null // null = Unlimited
+  profit: string
+  duration: string
+  ref: string
 }
 
 interface WalletOption {
@@ -42,31 +49,45 @@ const amount = ref('')
 const paymentDate = ref(new Date().toISOString().split('T')[0])
 
 /*
- * These two would normally come from your backend (plans and
- * supported deposit wallets). Hardcoded here until those endpoints
- * exist — replace with api.get('/plans') and api.get('/wallets')
- * once available.
+ * Mirrors the plans defined in InvestmentPlans.vue (same ids, names,
+ * profit %, duration, referral %). Minimum/maximum are parsed to
+ * numbers here so the form can validate against them — "Unlimited"
+ * becomes null (no upper bound).
  */
-
 const investmentPlans = ref<InvestmentPlan[]>([
-  { id: 'beginner', name: 'Beginner Plan', roi: 10, durationDays: 1 },
-  { id: 'standard', name: 'Standard Plan', roi: 25, durationDays: 7 },
-  { id: 'premium', name: 'Premium Plan', roi: 50, durationDays: 30 },
+  { id: 'starting', name: 'Starting Plan', icon: 'lucide:leaf', min: 80, max: 4000, profit: '15%', duration: '24 hours', ref: '10%' },
+  { id: 'emy', name: 'Emy Plan', icon: 'lucide:trending-up', min: 550, max: 9990, profit: '20%', duration: '36 hours', ref: '10%' },
+  { id: 'bonus', name: 'Bonus Plan', icon: 'lucide:gift', min: 1200, max: 7000, profit: '45%', duration: '40 hours', ref: '10%' },
+  { id: 'superlative', name: 'Superlative Plan', icon: 'lucide:award', min: 1500, max: 9500, profit: '25%', duration: '36 hours', ref: '10%' },
+  { id: 'loan', name: 'Loan Plan', icon: 'lucide:landmark', min: 2200, max: null, profit: '40%', duration: '20 hours', ref: '10%' },
+  { id: 'weekend', name: 'Weekend Plan', icon: 'lucide:calendar', min: 1000, max: 30000, profit: '50%', duration: '9 hours', ref: '10%' },
+  { id: 'gold', name: 'Gold Plan', icon: 'lucide:coins', min: 4500, max: null, profit: '55%', duration: '2 days', ref: '10%' },
+  { id: 'xmas', name: 'Xmas Bonus', icon: 'lucide:snowflake', min: 750, max: 15000, profit: '45%', duration: '1 day', ref: '10%' },
+  { id: 'upgrade', name: 'Upgrade Plan', icon: 'lucide:arrow-up-circle', min: 950, max: null, profit: '25%', duration: 'Custom', ref: '10%' },
 ])
 
+/*
+ * Still hardcoded until a backend endpoint for deposit wallets
+ * exists — replace with api.get('/wallets') once available.
+ */
 const walletOptions = ref<WalletOption[]>([
   {
     id: 'usdt-bep20',
     coinName: 'USDT BEP20',
     network: 'Binance Chain (BEP2)',
-    address: '0xb67d0d44ffd3462c53f1277c9b64e3dbabef09a8',
+    address: '0xE6f89E13aeb510cE485B10155cE99047dB6a30A2',
   },
-  
+  {
+    id: 'btc',
+    coinName: 'Bitcoin',
+    network: 'Bitcoin Network',
+    address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+  },
   {
     id: 'usdt-trc20',
     coinName: 'USDT TRC20',
     network: 'Tron (TRC20)',
-    address: 'TARfxkcK4qDXRHb3E5254VtZpnLotGxiu6',
+    address: 'TXYZ1234567890abcdefghijklmnopqrstuv',
   },
 ])
 
@@ -76,24 +97,47 @@ const walletOptions = ref<WalletOption[]>([
 |--------------------------------------------------------------------------
 */
 
+const selectedPlan = computed(() =>
+  investmentPlans.value.find((p) => p.id === selectedPlanId.value) ?? null
+)
+
 const selectedWallet = computed(() =>
   walletOptions.value.find((w) => w.id === selectedWalletId.value) ?? null
 )
 
+const planRangeLabel = computed(() => {
+  if (!selectedPlan.value) return ''
+
+  const min = `$${selectedPlan.value.min.toLocaleString()}`
+  const max = selectedPlan.value.max
+    ? `$${selectedPlan.value.max.toLocaleString()}`
+    : 'Unlimited'
+
+  return `${min} - ${max}`
+})
+
 /*
 |--------------------------------------------------------------------------
-| ANIMATION
+| LIFECYCLE
 |--------------------------------------------------------------------------
 */
 
 onMounted(() => {
-  // Default to the first wallet so the read-only fields aren't empty
-  if (walletOptions.value.length > 0) {
-    selectedWalletId.value = walletOptions.value[0].id
+  // Preselect the plan passed via ?plan=<id> from InvestmentPlans.vue.
+  // Falls back to the first plan if the query param is missing or
+  // doesn't match a known plan.
+  const requestedPlanId = route.query.plan as string | undefined
+  const matchedPlan = investmentPlans.value.find((p) => p.id === requestedPlanId)
+
+  const initialPlan = matchedPlan ?? investmentPlans.value[0]
+
+  if (initialPlan) {
+    selectedPlanId.value = initialPlan.id
+    amount.value = String(initialPlan.min)
   }
 
-  if (investmentPlans.value.length > 0) {
-    selectedPlanId.value = investmentPlans.value[0].id
+  if (walletOptions.value.length > 0) {
+    selectedWalletId.value = walletOptions.value[0].id
   }
 
   gsap.fromTo(
@@ -115,6 +159,20 @@ onMounted(() => {
     }
   )
 })
+
+/*
+|--------------------------------------------------------------------------
+| PLAN SELECTION
+|--------------------------------------------------------------------------
+*/
+
+// When the plan changes, prefill the amount with that plan's minimum
+// so the user isn't left guessing what's acceptable.
+const onPlanChange = () => {
+  if (selectedPlan.value) {
+    amount.value = String(selectedPlan.value.min)
+  }
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -149,12 +207,12 @@ const submitTopUp = async () => {
   errorMessage.value = ''
   successMessage.value = ''
 
-  if (!selectedPlanId.value) {
+  if (!selectedPlan.value) {
     errorMessage.value = 'Please select an investment plan.'
     return
   }
 
-  if (!selectedWalletId.value || !selectedWallet.value) {
+  if (!selectedWallet.value) {
     errorMessage.value = 'Please select a wallet.'
     return
   }
@@ -166,13 +224,23 @@ const submitTopUp = async () => {
     return
   }
 
+  if (numericAmount < selectedPlan.value.min) {
+    errorMessage.value = `Minimum for ${selectedPlan.value.name} is $${selectedPlan.value.min.toLocaleString()}.`
+    return
+  }
+
+  if (selectedPlan.value.max !== null && numericAmount > selectedPlan.value.max) {
+    errorMessage.value = `Maximum for ${selectedPlan.value.name} is $${selectedPlan.value.max.toLocaleString()}.`
+    return
+  }
+
   loading.value = true
 
   try {
     // Backend endpoint for deposits isn't built yet — this call is
     // ready for when POST /wallet/deposit exists.
     await api.post('/wallet/deposit', {
-      planId: selectedPlanId.value,
+      planId: selectedPlan.value.id,
       coinName: selectedWallet.value.coinName,
       network: selectedWallet.value.network,
       walletAddress: selectedWallet.value.address,
@@ -183,7 +251,7 @@ const submitTopUp = async () => {
     successMessage.value =
       'Your deposit has been submitted. Funds will reflect after verification.'
 
-    amount.value = ''
+    amount.value = String(selectedPlan.value.min)
   } catch (err: any) {
     errorMessage.value =
       err.response?.data?.message ||
@@ -198,31 +266,36 @@ const submitTopUp = async () => {
   <div class="min-h-screen bg-[#0B0F19] text-white p-5 md:p-8">
     <div ref="formContainer" class="max-w-lg mx-auto">
 
-      <!-- Fund Wallet Button / Heading -->
-      <div class="form-item text-center mb-6">
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-[#0B0F19] font-bold px-6 py-3 rounded-xl transition-colors"
-        >
-          <Icon icon="lucide:wallet" class="w-5 h-5" />
+      <!-- Fund Wallet Heading -->
+      <div class="form-item text-center mb-8">
+        <div class="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-1.5 rounded-full text-sm font-medium mb-4">
+          <Icon icon="lucide:wallet" class="w-4 h-4" />
           Fund Wallet
-        </button>
+        </div>
+
+        <h1 class="text-2xl md:text-3xl font-bold text-white">
+          Top Up Your Account
+        </h1>
       </div>
 
       <!-- Form Card -->
-      <div class="bg-[#12151C] border border-gray-800 rounded-2xl p-6 md:p-8">
+      <div class="bg-[#12151C] border border-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl">
 
         <!-- Info Banner -->
-        <p class="form-item text-sm text-gray-400 mb-6 text-center">
-          Funds added to your wallet will be available shortly after
-          verification.
-        </p>
+        <div class="form-item flex items-start gap-3 mb-6 p-3 rounded-lg bg-[#0B0F19] border border-gray-800">
+          <Icon icon="lucide:info" class="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+          <p class="text-sm text-gray-400">
+            Funds added to your wallet will be available shortly after
+            verification.
+          </p>
+        </div>
 
         <!-- Error -->
         <div
           v-if="errorMessage"
-          class="form-item mb-5 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-sm"
+          class="form-item mb-5 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-sm flex items-center gap-2"
         >
+          <Icon icon="lucide:circle-alert" class="w-4 h-4 flex-shrink-0" />
           {{ errorMessage }}
         </div>
 
@@ -245,6 +318,7 @@ const submitTopUp = async () => {
 
             <select
               v-model="selectedPlanId"
+              @change="onPlanChange"
               class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors appearance-none"
             >
               <option
@@ -252,10 +326,21 @@ const submitTopUp = async () => {
                 :key="plan.id"
                 :value="plan.id"
               >
-                {{ plan.name }} - {{ plan.roi.toFixed(2) }}% ROI for
-                {{ plan.durationDays }} day{{ plan.durationDays > 1 ? 's' : '' }}
+                {{ plan.name }} - {{ plan.profit }} ROI for {{ plan.duration }}
               </option>
             </select>
+
+            <!-- Min/Max info for the selected plan -->
+            <div
+              v-if="selectedPlan"
+              class="flex items-center justify-between mt-2 px-1 text-xs text-gray-500"
+            >
+              <span class="flex items-center gap-1.5">
+                <Icon :icon="selectedPlan.icon" class="w-3.5 h-3.5 text-emerald-500" />
+                Range: {{ planRangeLabel }}
+              </span>
+              <span class="text-emerald-400">Referral {{ selectedPlan.ref }}</span>
+            </div>
           </div>
 
           <!-- Select Wallet -->
@@ -339,11 +424,19 @@ const submitTopUp = async () => {
             <input
               v-model="amount"
               type="number"
-              min="0"
+              :min="selectedPlan?.min ?? 0"
+              :max="selectedPlan?.max ?? undefined"
               step="0.01"
               placeholder="0.00"
               class="w-full bg-[#0B0F19] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-gray-600"
             />
+
+            <p v-if="selectedPlan" class="mt-2 px-1 text-xs text-gray-500">
+              Minimum investment for {{ selectedPlan.name }}:
+              <span class="text-gray-300 font-medium">
+                ${{ selectedPlan.min.toLocaleString() }}
+              </span>
+            </p>
           </div>
 
           <!-- Payment Date -->
