@@ -2,7 +2,10 @@
 import { onMounted, ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import gsap from 'gsap'
+import { useRoute } from 'vue-router'
 import api from '../api/client'
+
+const route = useRoute()
 
 /*
 |--------------------------------------------------------------------------
@@ -46,12 +49,11 @@ const amount = ref('')
 const paymentDate = ref(new Date().toISOString().split('T')[0])
 
 /*
- * Mirrors the plans defined in your Market/Plans section (same names,
+ * Mirrors the plans defined in InvestmentPlans.vue (same ids, names,
  * profit %, duration, referral %). Minimum/maximum are parsed to
  * numbers here so the form can validate against them — "Unlimited"
  * becomes null (no upper bound).
  */
-
 const investmentPlans = ref<InvestmentPlan[]>([
   { id: 'starting', name: 'Starting Plan', icon: 'lucide:leaf', min: 80, max: 4000, profit: '15%', duration: '24 hours', ref: '10%' },
   { id: 'emy', name: 'Emy Plan', icon: 'lucide:trending-up', min: 550, max: 9990, profit: '20%', duration: '36 hours', ref: '10%' },
@@ -68,7 +70,6 @@ const investmentPlans = ref<InvestmentPlan[]>([
  * Still hardcoded until a backend endpoint for deposit wallets
  * exists — replace with api.get('/wallets') once available.
  */
-
 const walletOptions = ref<WalletOption[]>([
   {
     id: 'usdt-bep20',
@@ -122,13 +123,21 @@ const planRangeLabel = computed(() => {
 */
 
 onMounted(() => {
-  if (walletOptions.value.length > 0) {
-    selectedWalletId.value = walletOptions.value[0].id
+  // Preselect the plan passed via ?plan=<id> from InvestmentPlans.vue.
+  // Falls back to the first plan if the query param is missing or
+  // doesn't match a known plan.
+  const requestedPlanId = route.query.plan as string | undefined
+  const matchedPlan = investmentPlans.value.find((p) => p.id === requestedPlanId)
+
+  const initialPlan = matchedPlan ?? investmentPlans.value[0]
+
+  if (initialPlan) {
+    selectedPlanId.value = initialPlan.id
+    amount.value = String(initialPlan.min)
   }
 
-  if (investmentPlans.value.length > 0) {
-    selectedPlanId.value = investmentPlans.value[0].id
-    amount.value = String(investmentPlans.value[0].min)
+  if (walletOptions.value.length > 0) {
+    selectedWalletId.value = walletOptions.value[0].id
   }
 
   gsap.fromTo(
@@ -257,31 +266,36 @@ const submitTopUp = async () => {
   <div class="min-h-screen bg-[#0B0F19] text-white p-5 md:p-8">
     <div ref="formContainer" class="max-w-lg mx-auto">
 
-      <!-- Fund Wallet Button / Heading -->
-      <div class="form-item text-center mb-6">
-        <button
-          type="button"
-          class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-[#0B0F19] font-bold px-6 py-3 rounded-xl transition-colors"
-        >
-          <Icon icon="lucide:wallet" class="w-5 h-5" />
+      <!-- Fund Wallet Heading -->
+      <div class="form-item text-center mb-8">
+        <div class="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-1.5 rounded-full text-sm font-medium mb-4">
+          <Icon icon="lucide:wallet" class="w-4 h-4" />
           Fund Wallet
-        </button>
+        </div>
+
+        <h1 class="text-2xl md:text-3xl font-bold text-white">
+          Top Up Your Account
+        </h1>
       </div>
 
       <!-- Form Card -->
-      <div class="bg-[#12151C] border border-gray-800 rounded-2xl p-6 md:p-8">
+      <div class="bg-[#12151C] border border-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl">
 
         <!-- Info Banner -->
-        <p class="form-item text-sm text-gray-400 mb-6 text-center">
-          Funds added to your wallet will be available shortly after
-          verification.
-        </p>
+        <div class="form-item flex items-start gap-3 mb-6 p-3 rounded-lg bg-[#0B0F19] border border-gray-800">
+          <Icon icon="lucide:info" class="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+          <p class="text-sm text-gray-400">
+            Funds added to your wallet will be available shortly after
+            verification.
+          </p>
+        </div>
 
         <!-- Error -->
         <div
           v-if="errorMessage"
-          class="form-item mb-5 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-sm"
+          class="form-item mb-5 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-sm flex items-center gap-2"
         >
+          <Icon icon="lucide:circle-alert" class="w-4 h-4 flex-shrink-0" />
           {{ errorMessage }}
         </div>
 
