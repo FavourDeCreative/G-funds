@@ -54,6 +54,15 @@ const routes = [
   },
 
   {
+    path: "/fund-wallet",
+    name: "fund-wallet",
+    component: () => import("../views/FundWallet.vue"),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+
+  {
     path: "/forgot-password",
     name: "forgot-password",
     component: () => import("../views/ForgotPassword.vue"),

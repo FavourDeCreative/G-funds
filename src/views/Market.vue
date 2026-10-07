@@ -116,7 +116,7 @@ onMounted(() => {
           <p class="text-sm text-gray-400 mb-6">Our automated plans execute trades based on real-time market data to guarantee daily returns.</p>
           
           <router-link 
-            to="/register" 
+            to="/fund-wallet" 
             class="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-[#0B0F19] font-bold py-3.5 rounded-lg transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_25px_rgba(16,185,129,0.4)]"
           >
             <Icon icon="lucide:zap" class="w-5 h-5" />
