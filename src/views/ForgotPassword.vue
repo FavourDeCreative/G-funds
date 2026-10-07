@@ -3,9 +3,10 @@ import { onMounted, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import gsap from 'gsap'
 import { useRouter } from 'vue-router'
-import { supabase } from '../lib/supabase'
+import { useAuth } from '../stores/auth'
 
 const router = useRouter()
+const auth = useAuth()
 
 const imageContainer = ref<HTMLElement | null>(null)
 
@@ -50,7 +51,9 @@ const resetPassword = async () => {
   errorMessage.value = ''
   successMessage.value = ''
 
-  if (!email.value) {
+  const cleanEmail = email.value.trim()
+
+  if (!cleanEmail) {
     errorMessage.value = 'Please enter your email address.'
     return
   }
@@ -58,26 +61,17 @@ const resetPassword = async () => {
   loading.value = true
 
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(
-      email.value.trim(),
-      {
-        redirectTo: `${window.location.origin}/reset-password`
-      }
-    )
-
-    if (error) {
-      errorMessage.value = error.message
-      return
-    }
+    await auth.requestPasswordReset(cleanEmail)
 
     successMessage.value =
       'Password reset instructions have been sent to your email address.'
 
     email.value = ''
-  } catch (error) {
-    console.error('Password reset error:', error)
+  } catch (err: any) {
+    console.error('Password reset error:', err)
 
     errorMessage.value =
+      err.response?.data?.message ||
       'Something went wrong. Please check your internet connection and try again.'
   } finally {
     loading.value = false

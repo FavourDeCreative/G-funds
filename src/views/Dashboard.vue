@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-slate-950 text-white">
+  <div class="min-h-screen bg-[#0B0F19] text-white">
     <!-- Mobile Overlay -->
     <Transition name="fade">
       <div
@@ -11,20 +11,20 @@
 
     <!-- Sidebar -->
     <aside
-      class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-white/10 bg-slate-950/95 backdrop-blur-xl transition-transform duration-300 lg:translate-x-0"
+      class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-gray-800 bg-[#0B0F19]/95 backdrop-blur-xl transition-transform duration-300 lg:translate-x-0"
       :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'"
     >
       <!-- Logo -->
-      <div class="flex h-20 items-center justify-between border-b border-white/10 px-6">
+      <div class="flex h-20 items-center justify-between border-b border-gray-800 px-6">
         <RouterLink
           to="/"
           class="flex items-center gap-3"
           @click="mobileMenuOpen = false"
         >
           <div
-            class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/20"
+            class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20"
           >
-            <Icon icon="solar:chart-2-bold" class="text-2xl" />
+            <Icon icon="solar:chart-2-bold" class="text-2xl text-emerald-500" />
           </div>
 
           <div>
@@ -32,14 +32,14 @@
               Global Funds
             </h1>
 
-            <p class="text-[10px] uppercase tracking-[0.2em] text-slate-500">
+            <p class="text-[10px] uppercase tracking-[0.2em] text-gray-500">
               Investment
             </p>
           </div>
         </RouterLink>
 
         <button
-          class="rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-white lg:hidden"
+          class="rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-white lg:hidden"
           @click="mobileMenuOpen = false"
         >
           <Icon icon="solar:close-circle-bold" class="text-xl" />
@@ -47,10 +47,10 @@
       </div>
 
       <!-- User -->
-      <div class="border-b border-white/10 p-5">
+      <div class="border-b border-gray-800 p-5">
         <div class="flex items-center gap-3">
           <div
-            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-bold"
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-sm font-bold text-[#0B0F19]"
           >
             {{ userInitials }}
           </div>
@@ -60,7 +60,7 @@
               {{ fullName }}
             </p>
 
-            <p class="truncate text-xs text-slate-500">
+            <p class="truncate text-xs text-gray-500">
               {{ user?.email }}
             </p>
           </div>
@@ -70,7 +70,7 @@
       <!-- Navigation -->
       <nav class="flex-1 space-y-2 p-4">
         <p
-          class="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600"
+          class="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-600"
         >
           Main Menu
         </p>
@@ -80,8 +80,8 @@
           class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition"
           :class="
             isActive('/dashboard')
-              ? 'bg-indigo-500/10 text-indigo-400'
-              : 'text-slate-400 hover:bg-white/5 hover:text-white'
+              ? 'bg-emerald-500/10 text-emerald-400'
+              : 'text-gray-400 hover:bg-white/5 hover:text-white'
           "
           @click="mobileMenuOpen = false"
         >
@@ -91,7 +91,7 @@
 
         <RouterLink
           to="/market"
-          class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-400 transition hover:bg-white/5 hover:text-white"
           @click="mobileMenuOpen = false"
         >
           <Icon icon="solar:chart-square-bold" class="text-xl" />
@@ -99,14 +99,14 @@
         </RouterLink>
 
         <button
-          class="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white"
+          class="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-gray-400 transition hover:bg-white/5 hover:text-white"
         >
           <Icon icon="solar:wallet-money-bold" class="text-xl" />
           Transactions
         </button>
 
         <button
-          class="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white"
+          class="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-gray-400 transition hover:bg-white/5 hover:text-white"
         >
           <Icon icon="solar:user-bold" class="text-xl" />
           Profile
@@ -114,10 +114,10 @@
       </nav>
 
       <!-- Logout -->
-      <div class="border-t border-white/10 p-4">
+      <div class="border-t border-gray-800 p-4">
         <button
           :disabled="loggingOut"
-          class="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-400 transition hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+          class="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-400 transition hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
           @click="logout"
         >
           <Icon
@@ -141,19 +141,19 @@
     <main class="min-h-screen lg:pl-72">
       <!-- Header -->
       <header
-        class="sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl"
+        class="sticky top-0 z-30 border-b border-gray-800 bg-[#0B0F19]/80 backdrop-blur-xl"
       >
         <div class="flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
           <div class="flex items-center gap-3">
             <button
-              class="rounded-xl border border-white/10 bg-white/5 p-2.5 text-slate-300 lg:hidden"
+              class="rounded-xl border border-gray-700/50 bg-white/5 p-2.5 text-gray-300 lg:hidden"
               @click="mobileMenuOpen = true"
             >
               <Icon icon="solar:hamburger-menu-bold" class="text-xl" />
             </button>
 
             <div>
-              <p class="text-xs text-slate-500">
+              <p class="text-xs text-gray-500">
                 {{ greeting }}
               </p>
 
@@ -165,14 +165,14 @@
 
           <div class="flex items-center gap-3">
             <button
-              class="hidden rounded-xl border border-white/10 bg-white/5 p-2.5 text-slate-400 transition hover:bg-white/10 hover:text-white sm:block"
+              class="hidden rounded-xl border border-gray-700/50 bg-white/5 p-2.5 text-gray-400 transition hover:bg-white/10 hover:text-white sm:block"
               title="Notifications"
             >
               <Icon icon="solar:bell-bold" class="text-xl" />
             </button>
 
             <div
-              class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-bold"
+              class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-[#0B0F19]"
             >
               {{ userInitials }}
             </div>
@@ -202,18 +202,18 @@
           <!-- Welcome -->
           <section class="dashboard-item">
             <div
-              class="relative overflow-hidden rounded-3xl border border-indigo-400/20 bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-6 shadow-2xl shadow-indigo-950/30 sm:p-8"
+              class="relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-600 via-emerald-700 to-[#0B0F19] p-6 shadow-2xl shadow-emerald-950/30 sm:p-8"
             >
               <div
                 class="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-white/10 blur-3xl"
               />
 
               <div
-                class="absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-violet-400/10 blur-3xl"
+                class="absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-emerald-400/10 blur-3xl"
               />
 
               <div class="relative">
-                <p class="mb-2 text-sm text-indigo-200">
+                <p class="mb-2 text-sm text-emerald-200">
                   Your investment portfolio
                 </p>
 
@@ -223,14 +223,14 @@
                       {{ formatCurrency(stats.portfolioValue) }}
                     </h1>
 
-                    <p class="mt-2 text-sm text-indigo-200">
+                    <p class="mt-2 text-sm text-emerald-200">
                       Current portfolio value
                     </p>
                   </div>
 
                   <RouterLink
                     to="/market"
-                    class="inline-flex w-fit items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50"
+                    class="inline-flex w-fit items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
                   >
                     Explore Funds
                     <Icon icon="solar:arrow-right-bold" />
@@ -246,7 +246,7 @@
             <div class="dashboard-item stat-card">
               <div class="flex items-start justify-between">
                 <div>
-                  <p class="text-sm text-slate-500">
+                  <p class="text-sm text-gray-500">
                     Total Invested
                   </p>
 
@@ -255,12 +255,12 @@
                   </p>
                 </div>
 
-                <div class="stat-icon bg-blue-500/10 text-blue-400">
+                <div class="stat-icon bg-emerald-500/10 text-emerald-400">
                   <Icon icon="solar:wallet-money-bold" />
                 </div>
               </div>
 
-              <p class="mt-4 flex items-center gap-1 text-xs text-slate-500">
+              <p class="mt-4 flex items-center gap-1 text-xs text-gray-500">
                 <Icon icon="solar:info-circle-bold" />
                 Amount invested in funds
               </p>
@@ -270,7 +270,7 @@
             <div class="dashboard-item stat-card">
               <div class="flex items-start justify-between">
                 <div>
-                  <p class="text-sm text-slate-500">
+                  <p class="text-sm text-gray-500">
                     Total Returns
                   </p>
 
@@ -294,7 +294,7 @@
             <div class="dashboard-item stat-card">
               <div class="flex items-start justify-between">
                 <div>
-                  <p class="text-sm text-slate-500">
+                  <p class="text-sm text-gray-500">
                     Investments
                   </p>
 
@@ -303,12 +303,12 @@
                   </p>
                 </div>
 
-                <div class="stat-icon bg-violet-500/10 text-violet-400">
+                <div class="stat-icon bg-emerald-500/10 text-emerald-400">
                   <Icon icon="solar:chart-2-bold" />
                 </div>
               </div>
 
-              <p class="mt-4 text-xs text-slate-500">
+              <p class="mt-4 text-xs text-gray-500">
                 Active investment records
               </p>
             </div>
@@ -317,7 +317,7 @@
             <div class="dashboard-item stat-card">
               <div class="flex items-start justify-between">
                 <div>
-                  <p class="text-sm text-slate-500">
+                  <p class="text-sm text-gray-500">
                     Transactions
                   </p>
 
@@ -326,12 +326,12 @@
                   </p>
                 </div>
 
-                <div class="stat-icon bg-orange-500/10 text-orange-400">
+                <div class="stat-icon bg-emerald-500/10 text-emerald-400">
                   <Icon icon="solar:transfer-horizontal-bold" />
                 </div>
               </div>
 
-              <p class="mt-4 text-xs text-slate-500">
+              <p class="mt-4 text-xs text-gray-500">
                 Total account transactions
               </p>
             </div>
@@ -347,14 +347,14 @@
                     My Investments
                   </h3>
 
-                  <p class="mt-1 text-xs text-slate-500">
+                  <p class="mt-1 text-xs text-gray-500">
                     Your current investment portfolio
                   </p>
                 </div>
 
                 <RouterLink
                   to="/market"
-                  class="text-xs font-medium text-indigo-400 hover:text-indigo-300"
+                  class="text-xs font-medium text-emerald-400 hover:text-emerald-300"
                 >
                   Browse funds
                 </RouterLink>
@@ -363,10 +363,10 @@
               <!-- Empty -->
               <div
                 v-if="investments.length === 0"
-                class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 px-6 py-12 text-center"
+                class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-700/50 px-6 py-12 text-center"
               >
                 <div
-                  class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400"
+                  class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400"
                 >
                   <Icon icon="solar:chart-2-bold" class="text-2xl" />
                 </div>
@@ -375,14 +375,14 @@
                   No investments yet
                 </h4>
 
-                <p class="mt-2 max-w-sm text-sm text-slate-500">
+                <p class="mt-2 max-w-sm text-sm text-gray-500">
                   You haven't invested in any funds yet. Explore the market
                   and start building your portfolio.
                 </p>
 
                 <RouterLink
                   to="/market"
-                  class="mt-5 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold transition hover:bg-indigo-500"
+                  class="mt-5 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-[#0B0F19] transition hover:bg-emerald-400"
                 >
                   Explore funds
                 </RouterLink>
@@ -393,11 +393,11 @@
                 <div
                   v-for="investment in investments"
                   :key="investment.id"
-                  class="group flex flex-col gap-4 rounded-2xl border border-white/5 bg-white/[0.025] p-4 transition hover:border-indigo-500/20 hover:bg-white/[0.04] sm:flex-row sm:items-center sm:justify-between"
+                  class="group flex flex-col gap-4 rounded-2xl border border-gray-800 bg-white/[0.025] p-4 transition hover:border-emerald-500/20 hover:bg-white/[0.04] sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div class="flex min-w-0 items-center gap-4">
                     <div
-                      class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400"
+                      class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400"
                     >
                       <Icon icon="solar:buildings-2-bold" />
                     </div>
@@ -408,11 +408,11 @@
                       </h4>
 
                       <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                        <span class="text-slate-500">
+                        <span class="text-gray-500">
                           {{ investment.fund.category }}
                         </span>
 
-                        <span class="text-slate-700">•</span>
+                        <span class="text-gray-700">•</span>
 
                         <span
                           :class="riskClass(investment.fund.riskLevel)"
@@ -433,7 +433,7 @@
                       }}
                     </p>
 
-                    <p class="mt-1 text-xs text-slate-500">
+                    <p class="mt-1 text-xs text-gray-500">
                       {{ formatDate(investment.createdAt) }}
                     </p>
                   </div>
@@ -449,7 +449,7 @@
                     Recent Transactions
                   </h3>
 
-                  <p class="mt-1 text-xs text-slate-500">
+                  <p class="mt-1 text-xs text-gray-500">
                     Latest account activity
                   </p>
                 </div>
@@ -457,10 +457,10 @@
 
               <div
                 v-if="recentTransactions.length === 0"
-                class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 px-6 py-12 text-center"
+                class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-700/50 px-6 py-12 text-center"
               >
                 <div
-                  class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-500/10 text-slate-400"
+                  class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-700/20 text-gray-400"
                 >
                   <Icon icon="solar:transfer-horizontal-bold" class="text-2xl" />
                 </div>
@@ -469,7 +469,7 @@
                   No transactions
                 </h4>
 
-                <p class="mt-2 text-sm text-slate-500">
+                <p class="mt-2 text-sm text-gray-500">
                   Your recent transactions will appear here.
                 </p>
               </div>
@@ -493,7 +493,7 @@
                         {{ formatTransactionType(transaction.type) }}
                       </p>
 
-                      <p class="mt-1 text-xs text-slate-500">
+                      <p class="mt-1 text-xs text-gray-500">
                         {{ formatDate(transaction.createdAt) }}
                       </p>
                     </div>
@@ -527,14 +527,14 @@
                 Account Information
               </h3>
 
-              <p class="mt-1 text-xs text-slate-500">
+              <p class="mt-1 text-xs text-gray-500">
                 Your Global Funds account details
               </p>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div class="rounded-xl bg-white/[0.03] p-4">
-                <p class="text-xs text-slate-500">
+                <p class="text-xs text-gray-500">
                   Full Name
                 </p>
 
@@ -544,7 +544,7 @@
               </div>
 
               <div class="rounded-xl bg-white/[0.03] p-4">
-                <p class="text-xs text-slate-500">
+                <p class="text-xs text-gray-500">
                   Email
                 </p>
 
@@ -554,7 +554,7 @@
               </div>
 
               <div class="rounded-xl bg-white/[0.03] p-4">
-                <p class="text-xs text-slate-500">
+                <p class="text-xs text-gray-500">
                   Account Type
                 </p>
 
@@ -564,7 +564,7 @@
               </div>
 
               <div class="rounded-xl bg-white/[0.03] p-4">
-                <p class="text-xs text-slate-500">
+                <p class="text-xs text-gray-500">
                   Member Since
                 </p>
 
@@ -927,13 +927,13 @@ const transactionIconClass = (type: string): string => {
       return "bg-red-500/10 text-red-400";
 
     case "INVESTMENT":
-      return "bg-indigo-500/10 text-indigo-400";
+      return "bg-emerald-500/10 text-emerald-400";
 
     case "RETURN":
       return "bg-green-500/10 text-green-400";
 
     default:
-      return "bg-slate-500/10 text-slate-400";
+      return "bg-gray-700/20 text-gray-400";
   }
 };
 
@@ -945,10 +945,10 @@ const transactionAmountClass = (type: string): string => {
 
     case "WITHDRAWAL":
     case "INVESTMENT":
-      return "text-slate-200";
+      return "text-gray-200";
 
     default:
-      return "text-slate-200";
+      return "text-gray-200";
   }
 };
 
@@ -964,10 +964,10 @@ const statusClass = (status: string): string => {
       return "bg-red-500/10 text-red-400";
 
     case "CANCELLED":
-      return "bg-slate-500/10 text-slate-400";
+      return "bg-gray-700/20 text-gray-400";
 
     default:
-      return "bg-slate-500/10 text-slate-400";
+      return "bg-gray-700/20 text-gray-400";
   }
 };
 
@@ -1011,7 +1011,7 @@ onMounted(async () => {
 
 <!-- <style scoped>
 .stat-card {
-  @apply rounded-2xl border border-white/10 bg-white/[0.025] p-5 transition duration-300 hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/[0.04];
+  @apply rounded-2xl border border-gray-800 bg-white/[0.025] p-5 transition duration-300 hover:-translate-y-0.5 hover:border-gray-700 hover:bg-white/[0.04];
 }
 
 .stat-icon {
@@ -1019,7 +1019,7 @@ onMounted(async () => {
 }
 
 .panel {
-  @apply rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:p-6;
+  @apply rounded-2xl border border-gray-800 bg-white/[0.025] p-5 sm:p-6;
 }
 
 .fade-enter-active,
@@ -1031,4 +1031,4 @@ onMounted(async () => {
 .fade-leave-to {
   opacity: 0;
 }
-</style> -->
+</style> -->v  y   
