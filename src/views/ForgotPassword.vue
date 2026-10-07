@@ -2,11 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import gsap from 'gsap'
-import { useRouter } from 'vue-router'
-import { useAuth } from '../stores/auth'
-
-const router = useRouter()
-const auth = useAuth()
+import api from '../api/client'
 
 const imageContainer = ref<HTMLElement | null>(null)
 
@@ -61,7 +57,7 @@ const resetPassword = async () => {
   loading.value = true
 
   try {
-    await auth.requestPasswordReset(cleanEmail)
+    await api.post('/auth/forgot-password', { email: cleanEmail })
 
     successMessage.value =
       'Password reset instructions have been sent to your email address.'

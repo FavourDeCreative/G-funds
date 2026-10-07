@@ -4,6 +4,7 @@ import { Icon } from '@iconify/vue'
 import gsap from 'gsap'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../stores/auth'
+import api from '../api/client'
 
 const router = useRouter()
 const auth = useAuth()
@@ -139,8 +140,8 @@ const closeForgotPassword = () => {
  * The backend does not currently expose
  * POST /auth/forgot-password.
  *
- * This will remain ready for when the
- * password-reset backend is implemented.
+ * This call is ready for when that route exists —
+ * until then it will fail with a 404, caught below.
  */
 const sendResetEmail = async () => {
   forgotError.value = ''
@@ -156,8 +157,7 @@ const sendResetEmail = async () => {
   forgotLoading.value = true
 
   try {
-    // Backend endpoint will be implemented later.
-    await auth.requestPasswordReset(cleanEmail)
+    await api.post('/auth/forgot-password', { email: cleanEmail })
 
     forgotSuccess.value =
       'Password reset instructions have been sent to your email.'
@@ -522,4 +522,39 @@ const sendResetEmail = async () => {
             v-if="forgotSuccess"
             type="button"
             @click="closeForgotPassword"
-            class="w-full mt-2 border
+            class="w-full mt-2 border border-gray-800 hover:border-gray-700 text-gray-300 hover:text-white font-semibold py-3.5 rounded-lg transition"
+          >
+            Back to Sign In
+          </button>
+
+          <!-- Security Notice -->
+          <div
+            class="flex items-start gap-3 mt-6 pt-5 border-t border-gray-800"
+          >
+            <Icon
+              icon="lucide:shield-check"
+              class="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0"
+            />
+
+            <p class="text-[11px] text-gray-600 leading-relaxed">
+              For your security, the password reset link
+              will expire after a limited period.
+            </p>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </div>
+</template>
+
+<style scoped>
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+</style>
