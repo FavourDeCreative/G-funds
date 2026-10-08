@@ -1009,7 +1009,7 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
+<!-- <style scoped>
 .stat-card {
   @apply rounded-2xl border border-gray-800 bg-white/[0.025] p-5 transition duration-300 hover:-translate-y-0.5 hover:border-gray-700 hover:bg-white/[0.04];
 }
@@ -1031,4 +1031,4 @@ onMounted(async () => {
 .fade-leave-to {
   opacity: 0;
 }
-</style>
+</style> -->
