@@ -21,11 +21,11 @@
           class="flex items-center gap-3"
           @click="mobileMenuOpen = false"
         >
-          <div
-            class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20"
-          >
-            <Icon icon="solar:chart-2-bold" class="text-2xl text-emerald-500" />
-          </div>
+          <img
+            src="/public/img/logo.png"
+            alt="Global Funds"
+            class="h-10 w-auto"
+          />
 
           <div>
             <h1 class="text-lg font-bold tracking-tight">
@@ -1009,7 +1009,7 @@ onMounted(async () => {
 });
 </script>
 
-<!-- <style scoped>
+<style scoped>
 .stat-card {
   @apply rounded-2xl border border-gray-800 bg-white/[0.025] p-5 transition duration-300 hover:-translate-y-0.5 hover:border-gray-700 hover:bg-white/[0.04];
 }
@@ -1031,4 +1031,4 @@ onMounted(async () => {
 .fade-leave-to {
   opacity: 0;
 }
-</style> -->v  y   
+</style>
